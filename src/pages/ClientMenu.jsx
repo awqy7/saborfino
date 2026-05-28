@@ -90,7 +90,7 @@ const ClientMenu = () => {
   const total = cart.reduce((acc, i) => acc + i.price * i.quantity, 0);
   const itemCount = cart.reduce((acc, i) => acc + i.quantity, 0);
   const formatPrice = (price) =>
-    price > 0 ? `R$ ${price.toFixed(2).replace(".", ",")}` : 'Sob consulta';
+    '';
 
   const handleSetName = () => {
     if (clientName.trim()) {
@@ -187,7 +187,7 @@ const ClientMenu = () => {
   // Welcome Screen to get Name
   if (!isNameSet) {
     return (
-      <div style={{ minHeight: '100vh', background: '#090909', backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,0.82), rgba(0,0,0,0.45)), url(/images/fino-sabor-hero-background.png)', backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+      <div className="client-hero welcome-hero">
         <motion.div 
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           className="card"
@@ -226,19 +226,18 @@ const ClientMenu = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #090909 0%, #111211 52%, #0d0e0e 100%)', color: '#f4f0e9', paddingBottom: '100px' }}>
+    <div className="client-menu-container">
       {/* Header */}
-      <header style={{ background: 'rgba(7,7,7,0.94)', padding: '1.25rem 1rem', borderBottom: '1px solid rgba(255,132,14,0.22)', position: 'sticky', top: 0, zIndex: 10, boxShadow: '0 18px 44px rgba(0,0,0,0.32)', backdropFilter: 'blur(14px)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '600px', margin: '0 auto' }}>
-          <div>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f8f4ef' }}>Olá, {clientName}!</h1>
-            <p style={{ fontSize: '0.85rem', color: '#c6bdb5' }}>Mesa {tableId || 'Balcão'}</p>
+      <header className="client-menu-header">
+        <div className="client-menu-header-content">
+          <div className="client-menu-header-info">
+            <h1 className="client-menu-header-title">Olá, {clientName}!</h1>
+            <p className="client-menu-header-subtitle">Mesa {tableId || 'Balcão'}</p>
           </div>
           {currentOrderId && (
             <button 
-              className="btn btn-secondary btn-sm"
+              className="btn btn-secondary btn-sm client-menu-comanda-btn"
               onClick={() => setView('status')}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: 'var(--radius-full)', color: '#ff8507', borderColor: 'rgba(255,132,14,0.38)', background: 'rgba(255,132,14,0.12)' }}
             >
               <Clock size={16} /> Ver Comanda
             </button>
@@ -246,18 +245,17 @@ const ClientMenu = () => {
         </div>
       </header>
 
-      <main style={{ maxWidth: '600px', margin: '0 auto', padding: '1.25rem 1rem' }}>
+      <main className="client-menu-main">
         
         {view === 'menu' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             {/* Categories */}
-            <div className="tabs" style={{ marginBottom: '1.25rem', width: '100%', overflowX: 'auto', flexWrap: 'nowrap', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,132,14,0.18)' }}>
+            <div className="client-menu-tabs">
               {['Todas', ...CARDAPIO.map(s => s.category)].map(cat => (
                 <button
                   key={cat}
-                  className={`tab-btn${category === cat ? ' active' : ''}`}
+                  className={`client-menu-tab${category === cat ? ' active' : ''}`}
                   onClick={() => setCategory(cat)}
-                  style={{ whiteSpace: 'nowrap' }}
                 >
                   {cat}
                 </button>
@@ -266,104 +264,43 @@ const ClientMenu = () => {
 
             {/* Menu Sections */}
             {sections.map(section => (
-              <div key={section.category} style={{ marginBottom: '2rem' }}>
-                <div style={{
-                  position: 'relative',
-                  height: 130,
-                  borderRadius: 'var(--radius-lg)',
-                  overflow: 'hidden',
-                  marginBottom: '0.75rem',
-                }}>
-                  <div style={{
-                    position: 'absolute', inset: 0,
-                    background: `url(${section.image}) center/cover no-repeat`,
-                    filter: 'brightness(0.45) saturate(1.3)',
-                  }} />
-                  <div style={{
-                    position: 'absolute', inset: 0,
-                    background: 'linear-gradient(90deg, rgba(28,25,23,0.8) 0%, rgba(28,25,23,0.1) 100%)',
-                  }} />
-                  <div style={{
-                    position: 'relative', zIndex: 2,
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '0 1.25rem',
-                  }}>
-                    <h3 style={{
-                      fontFamily: 'Sora, sans-serif',
-                      fontSize: '1.15rem',
-                      fontWeight: 800,
-                      color: 'white',
-                      letterSpacing: '-0.02em',
-                    }}>
-                      {section.category}
-                    </h3>
-                  </div>
+              <div key={section.category} className="client-section-wrapper">
+                <div className="client-section-header">
+                  <div className="client-section-banner" style={{ backgroundImage: `url(${section.image})` }} />
+                  <div className="client-section-overlay" />
+                  <h3 className="client-section-title">{section.category}</h3>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div className="client-menu-items">
                   {section.items.map(item => {
                     const inCart = cart.find(i => i.id === item.id);
                     return (
                       <div
                         key={item.id}
+                        className="client-menu-item"
                         onClick={() => addToCart(item)}
-                        style={{
-                          background: 'linear-gradient(110deg, rgba(18,18,18,0.96), rgba(8,8,8,0.98))',
-                          borderRadius: 10,
-                          border: '1px solid rgba(255,255,255,0.14)',
-                          padding: '0.7rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-                          minHeight: 96,
-                          gap: '0.75rem',
-                        }}
                       >
-                        <div style={{
-                          width: 88,
-                          height: 78,
-                          borderRadius: 8,
-                          background: `url(${item.image}) center/cover no-repeat`,
-                          boxShadow: '12px 0 24px rgba(0,0,0,0.32)',
-                          flexShrink: 0,
-                        }} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#f4f0e9', lineHeight: 1.25 }}>
-                            {item.name}
-                          </div>
+                        <div 
+                          className="client-menu-item-image"
+                          style={{ backgroundImage: `url(${item.image})` }}
+                        />
+                        <div className="client-menu-item-content">
+                          <div className="client-menu-item-name">{item.name}</div>
                           {item.desc && (
-                            <p style={{ fontSize: '0.73rem', color: '#bdb5ae', marginTop: '0.22rem', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                              {item.desc}
-                            </p>
+                            <p className="client-menu-item-desc">{item.desc}</p>
                           )}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginLeft: '0.75rem', flexShrink: 0 }}>
+                        <div className="client-menu-item-actions">
                           {inCart && (
-                            <div
+                            <button
+                              className="client-menu-item-btn-remove"
                               onClick={(e) => { e.stopPropagation(); updateQuantity(item.id, -1); }}
-                              style={{
-                                width: 24, height: 24,
-                                borderRadius: '50%',
-                                background: '#ef4444',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer',
-                                color: 'white',
-                                fontSize: '1rem', fontWeight: 700, lineHeight: 1,
-                                userSelect: 'none',
-                              }}
+                              type="button"
                             >
                               −
-                            </div>
+                            </button>
                           )}
-                          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ff8507', whiteSpace: 'nowrap' }}>
-                            {formatPrice(item.price)}
-                          </span>
                           {inCart && (
-                            <span style={{ background: 'var(--primary)', color: 'white', fontSize: '0.7rem', fontWeight: 800, width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <span className="client-menu-item-qty">
                               {inCart.quantity}
                             </span>
                           )}
@@ -413,7 +350,7 @@ const ClientMenu = () => {
                   ))}
                   <div style={{ borderTop: '2px dashed var(--border)', margin: '0.5rem 0 1rem', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>Total a Adicionar</span>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>R$ {total.toFixed(2)}</span>
+                    <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}></span>
                   </div>
                 </div>
 
@@ -489,7 +426,7 @@ const ClientMenu = () => {
 
                 <div style={{ borderTop: '2px dashed var(--border)', marginTop: '1rem', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>Total da Conta</span>
-                  <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>R$ {orderTotal.toFixed(2)}</span>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}></span>
                 </div>
               </div>
             )}
@@ -512,7 +449,7 @@ const ClientMenu = () => {
               <div style={{ background: 'rgba(255,255,255,0.2)', width: 32, height: 32, borderRadius: 'var(--radius-full)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{itemCount}</div>
               <span style={{ fontWeight: 700, fontSize: '1rem' }}>Finalizar Pedido</span>
             </div>
-            <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>R$ {total.toFixed(2)}</span>
+            <span style={{ fontWeight: 800, fontSize: '1.1rem' }}></span>
           </button>
         </motion.div>
       )}

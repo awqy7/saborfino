@@ -32,7 +32,7 @@ const Relatorios = () => {
   const insights = [
     { icon: TrendingUp, label: 'Ticket médio subiu', sub: '+15% nesta semana', color: 'var(--success)', bg: 'var(--sage-50)' },
     { icon: TrendingDown, label: 'Espera no sábado', sub: 'Tempo médio aumentou', color: 'var(--danger)', bg: '#fff1f2' },
-    { icon: Award, label: 'Melhor dia: Sábado', sub: 'R$ 2.340 em vendas', color: '#f59e0b', bg: 'var(--amber-50)' },
+    { icon: Award, label: 'Melhor dia: Sábado', sub: '', color: '#f59e0b', bg: 'var(--amber-50)' },
   ];
 
   return (
@@ -175,7 +175,7 @@ const Relatorios = () => {
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.sales} vendas</div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontFamily: 'Sora', fontWeight: 700, fontSize: '0.9rem' }}>R$ {p.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                <div style={{ fontFamily: 'Sora', fontWeight: 700, fontSize: '0.9rem' }}></div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3, fontSize: '0.72rem', fontWeight: 700, color: p.up ? 'var(--success)' : 'var(--danger)' }}>
                   {p.up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
                   {p.growth}

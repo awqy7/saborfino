@@ -26,9 +26,7 @@ const allProducts = CARDAPIO.flatMap(section =>
 
 const ProductCard = React.memo(({ product, inCart, onAdd, onRemoveOne }) => {
   const [clicked, setClicked] = useState(false);
-  const priceLabel = product.price > 0
-    ? `R$ ${product.price.toFixed(2).replace(".", ",")}`
-    : 'Sob consulta';
+  const priceLabel = '';
 
   const handleClick = () => {
     setClicked(true);
@@ -246,7 +244,7 @@ const POS = () => {
               <div key={item.id} className="pos-cart-item pos-cart-item-dim">
                 <div className="pos-cart-item-info">
                   <div className="pos-cart-item-name">{item.name}</div>
-                  <div className="pos-cart-item-sub">R$ {(item.price * item.quantity).toFixed(2)}</div>
+                  <div className="pos-cart-item-sub"></div>
                 </div>
                 <span className="pos-cart-item-qty">×{item.quantity}</span>
               </div>
@@ -255,7 +253,7 @@ const POS = () => {
           <div className="pos-cart-footer">
             <div className="pos-total-row">
               <span className="pos-total-label">Total</span>
-              <span className="pos-total-value">R$ {total.toFixed(2)}</span>
+              <span className="pos-total-value"></span>
             </div>
             <motion.button
               className="btn btn-primary"
@@ -287,7 +285,7 @@ const POS = () => {
               {cart.map(item => (
                 <tr key={item.id}>
                   <td>{item.quantity}x {item.name}</td>
-                  <td style={{ textAlign: 'right' }}>R$ {(item.price * item.quantity).toFixed(2)}</td>
+                  <td style={{ textAlign: 'right' }}></td>
                 </tr>
               ))}
             </tbody>
@@ -295,7 +293,7 @@ const POS = () => {
           <hr />
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 15, marginTop: 8 }}>
             <span>TOTAL:</span>
-            <span>R$ {total.toFixed(2)}</span>
+            <span></span>
           </div>
           <div style={{ textAlign: 'center', marginTop: 20, fontSize: 11 }}>
             <p>Obrigado pela preferência!</p>
@@ -475,7 +473,7 @@ const POS = () => {
                 >
                   <div className="pos-cart-item-info">
                     <div className="pos-cart-item-name">{item.name}</div>
-                    <div className="pos-cart-item-sub">R$ {(item.price * item.quantity).toFixed(2)}</div>
+                    <div className="pos-cart-item-sub"></div>
                   </div>
                   <div className="pos-cart-qty">
                     <button className="pos-cart-qty-btn" onClick={() => updateQuantity(item.id, -1)}>
@@ -518,14 +516,14 @@ const POS = () => {
             <>
               <div className="pos-subtotal">
                 <span>{itemCount} {itemCount === 1 ? 'item' : 'itens'}</span>
-                <span>R$ {total.toFixed(2)}</span>
+                <span></span>
               </div>
               <div className="pos-divider" />
             </>
           )}
           <div className="pos-total-row">
             <span className="pos-total-label">Total</span>
-            <span className="pos-total-value">R$ {total.toFixed(2)}</span>
+            <span className="pos-total-value"></span>
           </div>
           {cart.length > 0 && orderType === 'mesa' && !mesa.trim() && (
             <p className="pos-hint"><Hash size={11} /> Informe o número da mesa</p>
@@ -645,7 +643,7 @@ const POS = () => {
                         >
                           <div className="pos-cart-item-info">
                             <div className="pos-cart-item-name">{item.name}</div>
-                            <div className="pos-cart-item-sub">R$ {(item.price * item.quantity).toFixed(2)}</div>
+                            <div className="pos-cart-item-sub"></div>
                           </div>
                           <div className="pos-cart-qty">
                             <button className="pos-cart-qty-btn" onClick={() => updateQuantity(item.id, -1)}><Minus size={10} /></button>
@@ -672,14 +670,14 @@ const POS = () => {
                     <>
                       <div className="pos-subtotal">
                         <span>{itemCount} {itemCount === 1 ? 'item' : 'itens'}</span>
-                        <span>R$ {total.toFixed(2)}</span>
+                        <span></span>
                       </div>
                       <div className="pos-divider" />
                     </>
                   )}
                   <div className="pos-total-row">
                     <span className="pos-total-label">Total</span>
-                    <span className="pos-total-value">R$ {total.toFixed(2)}</span>
+                    <span className="pos-total-value"></span>
                   </div>
                   {cart.length > 0 && orderType === 'mesa' && !mesa.trim() && (
                     <p className="pos-hint"><Hash size={11} /> Informe o número da mesa</p>

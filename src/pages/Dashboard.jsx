@@ -29,7 +29,7 @@ const Dashboard = () => {
   const stats = [
     {
       label: 'Vendas Hoje',
-      value: 'R$ 1.250',
+      value: '',
       change: '+12%',
       up: true,
       icon: DollarSign,
@@ -59,7 +59,7 @@ const Dashboard = () => {
     },
     {
       label: 'Ticket Médio',
-      value: 'R$ 29,76',
+      value: '',
       change: '-2%',
       up: false,
       icon: TrendingUp,
@@ -188,7 +188,7 @@ const Dashboard = () => {
                   </div>
                   <span className={`badge ${cfg.cls}`}>{cfg.label}</span>
                   <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                    R$ {order.total.toFixed(2)}
+
                   </span>
                   <ChevronRight size={16} color="var(--text-muted)" />
                 </motion.div>

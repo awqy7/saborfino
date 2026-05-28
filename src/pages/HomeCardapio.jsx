@@ -32,9 +32,9 @@ function Icon({ name, className = "" }) {
     case "bag":
       return (
         <svg {...common}>
-          <path d="M6.4 8.2h11.2l-.8 10.4a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6.4 8.2Z" />
-          <path d="M9 8.2a3 3 0 0 1 6 0" />
-          <path d="M9.9 13.1h4.2M12 11v4.2" />
+          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+          <path d="M3 6h18" />
+          <path d="M16 10a4 4 0 0 1-8 0" />
         </svg>
       );
     case "login":
@@ -123,7 +123,7 @@ function Icon({ name, className = "" }) {
 }
 
 function formatPrice(price) {
-  return price > 0 ? `R$ ${price.toFixed(2).replace(".", ",")}` : "Sob consulta";
+  return "";
 }
 
 function DishCard({ item, index }) {
@@ -248,8 +248,7 @@ export default function HomeCardapio() {
               <span>Fino Sabor</span>
             </h1>
             <p>
-              Cortes selecionados, preparo artesanal
-              <br />e o sabor que voc&ecirc; j&aacute; conhece.
+              Prazer em servi-los, onde a qualidade faz a diferen&ccedil;a.
             </p>
 
             <div className="hero-actions">
@@ -428,38 +427,31 @@ export default function HomeCardapio() {
           inset: 0;
           z-index: -1;
           background:
-            linear-gradient(90deg, rgba(0, 0, 0, 0.64) 0%, rgba(0, 0, 0, 0.08) 38%, rgba(0, 0, 0, 0.02) 68%, rgba(0, 0, 0, 0.58) 100%),
-            linear-gradient(180deg, rgba(0, 0, 0, 0.38) 0%, rgba(0, 0, 0, 0) 39%, rgba(0, 0, 0, 0.1) 78%, rgba(0, 0, 0, 0.74) 100%);
+            linear-gradient(90deg, rgba(0, 0, 0, 0.52) 0%, rgba(0, 0, 0, 0.02) 38%, rgba(0, 0, 0, 0) 68%, rgba(0, 0, 0, 0.42) 100%),
+            linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0) 39%, rgba(0, 0, 0, 0.04) 78%, rgba(0, 0, 0, 0.58) 100%);
         }
         .hero-photo {
           position: absolute;
           top: 80px;
+          left: 0;
           right: 0;
           bottom: -3px;
-          width: min(72vw, 1200px);
+          width: 100%;
           z-index: -2;
           opacity: 1;
+          filter: brightness(1.13) saturate(1.16) contrast(1.03);
           background-image:
-            linear-gradient(90deg, rgba(5, 5, 5, 0.24) 0%, rgba(5, 5, 5, 0.02) 22%, rgba(5, 5, 5, 0) 46%, rgba(5, 5, 5, 0.18) 100%),
-            linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.18)),
-            url('/images/fino-sabor-hero-background.png'),
-            url('/images/fino-sabor-reference.png'),
-            radial-gradient(ellipse at 61% 42%, rgba(139, 65, 27, 0.88) 0 9%, rgba(57, 24, 11, 0.98) 18%, transparent 45%),
-            radial-gradient(ellipse at 75% 48%, rgba(179, 88, 38, 0.62) 0 7%, rgba(49, 18, 8, 0.98) 21%, transparent 40%),
+            linear-gradient(90deg, rgba(5, 5, 5, 0.12) 0%, rgba(5, 5, 5, 0) 24%, rgba(5, 5, 5, 0) 72%, rgba(5, 5, 5, 0.1) 100%),
+            linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.06)),
+            url('/images/fino-sabor-hero-wide.png'),
             linear-gradient(122deg, #1a0f0a 0%, #3a1a0b 44%, #070707 100%);
           background-size:
             100% 100%,
             100% 100%,
             cover,
-            1672px 941px,
-            100% 100%,
-            100% 100%,
             100% 100%;
           background-position:
             center,
-            center,
-            center,
-            right -80px,
             center,
             center,
             center;
@@ -622,7 +614,7 @@ export default function HomeCardapio() {
           color: #d1ccc6;
           font-size: 16px;
           line-height: 1.45;
-          font-weight: 400;
+          font-weight: 600;
         }
         .hero-actions {
           display: flex;
@@ -697,7 +689,7 @@ export default function HomeCardapio() {
         }
         .section-title {
           width: min(1348px, calc(100% - 48px));
-          margin: 0 auto 3px;
+          margin: 0 auto 24px;
           text-align: center;
         }
         .section-title > span {
@@ -1014,7 +1006,7 @@ export default function HomeCardapio() {
           }
           .hero-photo {
             width: 100%;
-            opacity: 0.62;
+            opacity: 0.95;
           }
           .hero-copy {
             width: min(100%, 500px);
@@ -1031,40 +1023,37 @@ export default function HomeCardapio() {
         }
         @media (max-width: 760px) {
           .hero {
-            min-height: 690px;
+            height: 500px;
+            min-height: 0;
           }
           .hero::before {
             background:
-              radial-gradient(circle at 64% 25%, rgba(119, 52, 17, 0.48), transparent 28%),
+              radial-gradient(circle at 64% 25%, rgba(144, 64, 22, 0.5), transparent 30%),
               linear-gradient(180deg, #030303 0%, #070707 100%);
           }
           .hero::after {
             background:
-              linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.28) 58%, rgba(0, 0, 0, 0.62) 100%),
-              linear-gradient(180deg, rgba(0, 0, 0, 0.42) 0%, rgba(0, 0, 0, 0.06) 42%, rgba(0, 0, 0, 0.72) 100%);
+              linear-gradient(90deg, rgba(0, 0, 0, 0.58) 0%, rgba(0, 0, 0, 0.12) 58%, rgba(0, 0, 0, 0.44) 100%),
+              linear-gradient(180deg, rgba(0, 0, 0, 0.26) 0%, rgba(0, 0, 0, 0) 42%, rgba(0, 0, 0, 0.52) 100%);
           }
           .hero-photo {
             top: 78px;
             bottom: 0;
             width: 100%;
-            opacity: 0.9;
+            opacity: 1;
+            filter: brightness(1.16) saturate(1.18) contrast(1.03);
             background-size:
               100% 100%,
               100% 100%,
               cover,
-              1440px auto,
-              100% 100%,
-              100% 100%,
               100% 100%;
             background-position:
               center,
               center,
               center,
-              48% top,
-              center,
-              center,
               center;
           }
+
           .topbar {
             height: 66px;
             min-height: 0;
@@ -1271,9 +1260,6 @@ export default function HomeCardapio() {
           .features-row {
             width: calc(100% - 22px);
           }
-          .hero {
-            min-height: 672px;
-          }
           .topbar {
             height: 62px;
             padding: 0 12px;
@@ -1295,6 +1281,7 @@ export default function HomeCardapio() {
             width: 44px;
             height: 40px;
             padding: 0;
+            gap: 0;
             font-size: 0;
           }
           .order-button svg {
@@ -1337,6 +1324,21 @@ export default function HomeCardapio() {
           .dish-copy p {
             font-size: 10.8px;
             -webkit-line-clamp: 3;
+          }
+          .hero-badges {
+            gap: 5px;
+            font-size: 10px;
+            width: 100%;
+          }
+          .hero-badges span {
+            padding: 6px 5px;
+            min-height: 40px;
+            column-gap: 6px;
+            grid-template-columns: 16px minmax(0, 1fr);
+          }
+          .hero-badges svg {
+            width: 16px;
+            height: 16px;
           }
           .features-row {
             grid-template-columns: 1fr;
