@@ -1031,70 +1031,235 @@ export default function HomeCardapio() {
         }
         @media (max-width: 760px) {
           .hero {
-            min-height: 740px;
+            min-height: 690px;
+          }
+          .hero::before {
+            background:
+              radial-gradient(circle at 64% 25%, rgba(119, 52, 17, 0.48), transparent 28%),
+              linear-gradient(180deg, #030303 0%, #070707 100%);
+          }
+          .hero::after {
+            background:
+              linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.28) 58%, rgba(0, 0, 0, 0.62) 100%),
+              linear-gradient(180deg, rgba(0, 0, 0, 0.42) 0%, rgba(0, 0, 0, 0.06) 42%, rgba(0, 0, 0, 0.72) 100%);
+          }
+          .hero-photo {
+            top: 78px;
+            bottom: 0;
+            width: 100%;
+            opacity: 0.9;
+            background-size:
+              100% 100%,
+              100% 100%,
+              cover,
+              1440px auto,
+              100% 100%,
+              100% 100%,
+              100% 100%;
+            background-position:
+              center,
+              center,
+              center,
+              48% top,
+              center,
+              center,
+              center;
           }
           .topbar {
-            height: auto;
-            min-height: 78px;
-            align-items: flex-start;
-            gap: 18px;
-            padding: 18px;
-            border-radius: 24px;
+            height: 66px;
+            min-height: 0;
+            align-items: center;
+            gap: 12px;
+            margin-top: 11px;
+            padding: 0 14px;
+            border-radius: 22px;
           }
           .brand {
             min-width: 0;
+            gap: 10px;
+          }
+          .brand .brand-mark {
+            width: 34px;
+            height: 34px;
           }
           .brand b {
-            font-size: 23px;
+            font-size: 22px;
+            line-height: 20px;
+          }
+          .brand small {
+            margin-top: 4px;
+            font-size: 8px;
+            letter-spacing: 2.7px;
           }
           .top-actions {
             margin-left: auto;
+            gap: 0;
           }
           .system-button {
             display: none;
           }
+          .order-button {
+            height: 42px;
+            min-width: 88px;
+            border-radius: 11px;
+            font-size: 13px;
+          }
           .hero-copy {
-            padding-top: 58px;
+            width: min(100%, 440px);
+            margin-left: 0;
+            padding-top: 44px;
           }
           .hero h1 {
-            font-size: 54px;
+            font-size: 48px;
+            line-height: 0.98;
           }
-          .hero-actions,
-          .hero-badges {
+          .hero p {
+            max-width: 310px;
+            font-size: 15px;
+          }
+          .hero-actions {
             flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 22px;
           }
           .hero-badges {
-            gap: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            width: min(100%, 430px);
+            margin-top: 28px;
+            font-size: 11px;
+          }
+          .hero-badges span {
+            grid-template-columns: 20px minmax(0, 1fr);
+            min-height: 52px;
+            padding: 10px 9px;
+            border: 1px solid rgba(255, 132, 14, 0.22);
+            border-radius: 10px;
+            background: rgba(8, 8, 8, 0.46);
+            backdrop-filter: blur(8px);
+          }
+          .hero-badges svg {
+            width: 20px;
+            height: 20px;
           }
           .menu-section {
-            padding-top: 24px;
+            padding-top: 22px;
           }
           .section-title h2 {
-            font-size: 29px;
-            gap: 12px;
+            font-size: 27px;
+            gap: 10px;
           }
           .section-title h2 i {
-            width: 26px;
+            width: 24px;
           }
           .category-panel {
-            height: 150px;
+            height: 132px;
             align-items: flex-start;
-            padding: 25px 24px;
+            padding: 23px 22px;
+            border-radius: 10px;
+            background-size:
+              100% 100%,
+              auto 100%,
+              100% 100%,
+              100% 100%;
+          }
+          .category-copy {
+            gap: 13px;
+            max-width: calc(100% - 146px);
+          }
+          .category-copy > svg {
+            width: 34px;
+            height: 34px;
           }
           .category-copy h3 {
-            font-size: 31px;
+            font-size: 29px;
           }
           .category-button {
             position: absolute;
-            right: 24px;
-            bottom: 22px;
+            right: 18px;
+            bottom: 18px;
+            height: 32px;
           }
-          .dish-grid,
-          .features-row {
+          .dish-grid {
             grid-template-columns: 1fr;
+            gap: 10px;
+          }
+          .dish-card {
+            height: 142px;
+            padding: 32px 48px 13px 132px;
+            border-color: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+          }
+          .dish-shot {
+            left: 12px;
+            top: 31px;
+            bottom: auto;
+            width: 108px;
+            height: 96px;
+            border-radius: 8px;
+          }
+          .dish-number {
+            left: 12px;
+            top: 10px;
+          }
+          .dish-flame {
+            right: 12px;
+            top: 10px;
+          }
+          .dish-copy h3 {
+            font-size: 17px;
+            line-height: 1.03;
+            margin-bottom: 7px;
+          }
+          .dish-copy p {
+            font-size: 11.4px;
+            line-height: 1.2;
+          }
+          .dish-copy strong {
+            font-size: 15px;
+            margin-top: 8px;
+          }
+          .features-row {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            min-height: 0;
+            gap: 0;
           }
           .feature:not(:last-child)::after {
             display: none;
+          }
+          .feature {
+            justify-content: flex-start;
+            align-items: flex-start;
+            min-height: 112px;
+            padding: 14px;
+            border-bottom: 1px solid rgba(255, 132, 14, 0.14);
+          }
+          .feature:nth-child(odd) {
+            border-right: 1px solid rgba(255, 132, 14, 0.14);
+          }
+          .feature:nth-child(n + 3) {
+            border-bottom: none;
+          }
+          .feature-icon {
+            flex-basis: 40px;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+          }
+          .feature-icon svg {
+            width: 21px;
+            height: 21px;
+          }
+          .feature b {
+            font-size: 12px;
+          }
+          .feature small {
+            max-width: none;
+            font-size: 10.6px;
+          }
+          .menu-rest {
+            margin-top: 22px;
           }
         }
         @media (max-width: 470px) {
@@ -1106,44 +1271,108 @@ export default function HomeCardapio() {
           .features-row {
             width: calc(100% - 22px);
           }
+          .hero {
+            min-height: 672px;
+          }
           .topbar {
-            padding: 15px;
+            height: 62px;
+            padding: 0 12px;
+          }
+          .brand .brand-mark {
+            width: 31px;
+            height: 31px;
+          }
+          .brand b {
+            font-size: 20px;
+            line-height: 19px;
+          }
+          .brand small {
+            font-size: 7px;
+            letter-spacing: 2.4px;
           }
           .order-button {
-            min-width: 48px;
-            padding: 0 13px;
+            min-width: 44px;
+            width: 44px;
+            height: 40px;
+            padding: 0;
             font-size: 0;
           }
           .order-button svg {
             width: 21px;
             height: 21px;
           }
+          .hero-copy {
+            padding-top: 42px;
+          }
           .hero h1 {
-            font-size: 45px;
+            font-size: 42px;
           }
           .hero p {
-            font-size: 16px;
+            max-width: 280px;
+            font-size: 14.5px;
           }
           .cta-primary,
           .cta-secondary {
             width: 100%;
+            height: 44px;
           }
           .dish-card {
-            min-height: 205px;
-            padding: 154px 18px 18px;
+            height: 138px;
+            min-height: 0;
+            padding: 31px 40px 12px 126px;
           }
           .dish-shot {
-            top: 38px;
-            bottom: auto;
-            width: calc(100% - 34px);
-            height: 106px;
+            left: 11px;
+            top: 31px;
+            width: 103px;
+            height: 93px;
           }
           .dish-copy h3,
           .dish-copy p {
             max-width: none;
           }
+          .dish-copy h3 {
+            font-size: 15.8px;
+          }
+          .dish-copy p {
+            font-size: 10.8px;
+            -webkit-line-clamp: 3;
+          }
+          .features-row {
+            grid-template-columns: 1fr;
+          }
+          .category-panel {
+            height: 148px;
+            padding: 20px;
+          }
+          .category-copy {
+            max-width: 100%;
+          }
+          .category-copy h3 {
+            font-size: 25px;
+            line-height: 0.98;
+          }
+          .category-copy p {
+            font-size: 12.5px;
+          }
+          .category-button {
+            left: 20px;
+            right: auto;
+            bottom: 17px;
+            min-width: 118px;
+          }
           .feature {
-            justify-content: flex-start;
+            min-height: 82px;
+            flex-direction: row;
+            align-items: center;
+            border-right: none !important;
+            border-bottom: 1px solid rgba(255, 132, 14, 0.14);
+          }
+          .feature:nth-child(n + 3) {
+            border-bottom: 1px solid rgba(255, 132, 14, 0.14);
+          }
+          .feature:last-child {
+            border-bottom: none;
           }
         }
       `}</style>
