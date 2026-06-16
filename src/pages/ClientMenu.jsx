@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { Plus, Minus, ShoppingCart, CheckCircle, Clock, Utensils, Send, User, Receipt } from 'lucide-react';
 import { motion } from 'framer-motion';
 import CARDAPIO from '../data/cardapio';
+import { formatPrice } from '../lib/format';
 
 const ClientMenu = () => {
   const { tableId } = useParams();
@@ -89,8 +90,7 @@ const ClientMenu = () => {
 
   const total = cart.reduce((acc, i) => acc + i.price * i.quantity, 0);
   const itemCount = cart.reduce((acc, i) => acc + i.quantity, 0);
-  const formatPrice = (price) =>
-    '';
+
 
   const handleSetName = () => {
     if (clientName.trim()) {
@@ -279,10 +279,11 @@ const ClientMenu = () => {
                         className="client-menu-item"
                         onClick={() => addToCart(item)}
                       >
-                        <div 
-                          className="client-menu-item-image"
-                          style={{ backgroundImage: `url(${item.image})` }}
-                        />
+                        {item.image ? (
+                          <div className="client-menu-item-image" style={{ backgroundImage: `url(${item.image})` }} />
+                        ) : (
+                          <div className="client-menu-item-image client-menu-item-image-placeholder" />
+                        )}
                         <div className="client-menu-item-content">
                           <div className="client-menu-item-name">{item.name}</div>
                           {item.desc && (
@@ -350,7 +351,7 @@ const ClientMenu = () => {
                   ))}
                   <div style={{ borderTop: '2px dashed var(--border)', margin: '0.5rem 0 1rem', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>Total a Adicionar</span>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}></span>
+                    <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>{formatPrice(total)}</span>
                   </div>
                 </div>
 
@@ -426,7 +427,7 @@ const ClientMenu = () => {
 
                 <div style={{ borderTop: '2px dashed var(--border)', marginTop: '1rem', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>Total da Conta</span>
-                  <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}></span>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>{formatPrice(orderTotal)}</span>
                 </div>
               </div>
             )}
@@ -449,7 +450,7 @@ const ClientMenu = () => {
               <div style={{ background: 'rgba(255,255,255,0.2)', width: 32, height: 32, borderRadius: 'var(--radius-full)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{itemCount}</div>
               <span style={{ fontWeight: 700, fontSize: '1rem' }}>Finalizar Pedido</span>
             </div>
-            <span style={{ fontWeight: 800, fontSize: '1.1rem' }}></span>
+            <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>{formatPrice(total)}</span>
           </button>
         </motion.div>
       )}

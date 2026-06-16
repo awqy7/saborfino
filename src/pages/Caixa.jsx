@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { formatPrice } from '../lib/format';
 import { 
   CreditCard, 
   Banknote, 
@@ -94,8 +95,8 @@ const Caixa = () => {
   const totalFechados = orders.filter(o => o.status === 'pago').reduce((acc, o) => acc + Number(o.total), 0);
   
   const summaryCards = [
-    { label: 'Total Recebido (Hoje)', value: '', icon: TrendingUp, accent: '#22c55e', iconBg: '#f0fdf4', iconColor: '#16a34a' },
-    { label: 'A Receber (Mesas)', value: '', icon: Clock, accent: '#f59e0b', iconBg: '#fef3c7', iconColor: '#b45309' },
+    { label: 'Total Recebido (Hoje)', value: formatPrice(totalFechados), icon: TrendingUp, accent: '#22c55e', iconBg: '#f0fdf4', iconColor: '#16a34a' },
+    { label: 'A Receber (Mesas)', value: formatPrice(totalEmAberto), icon: Clock, accent: '#f59e0b', iconBg: '#fef3c7', iconColor: '#b45309' },
   ];
 
   const getStatusBadge = (status) => {
@@ -239,7 +240,7 @@ const Caixa = () => {
                       {getStatusBadge(tx.status)}
                     </td>
                     <td style={{ textAlign: 'right', fontFamily: 'Sora, sans-serif', fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-
+                      {formatPrice(tx.total)}
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       {activeTab === 'Em Aberto' ? (

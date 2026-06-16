@@ -4,10 +4,11 @@ import {
   Plus, Minus, Search, ShoppingCart,
   Printer, X, CheckCircle, UtensilsCrossed,
   Bike, Hash, MessageSquare, RotateCcw,
-  ChevronRight, Trash2, AlertCircle
+  ChevronRight, Trash2, AlertCircle, User,
+  LayoutList, PanelRightOpen
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import CARDAPIO from '../data/cardapio';
+import { formatPrice } from '../lib/format';
 
 const ORDER_TYPES = [
   { id: 'mesa',    label: 'Mesa',     icon: UtensilsCrossed },
@@ -18,88 +19,75 @@ const ORDER_TYPES = [
 const categories = ['Todas', ...CARDAPIO.map(s => s.category)];
 
 const allProducts = CARDAPIO.flatMap(section =>
-  section.items.map(item => ({
-    ...item,
-    category: section.category,
-  }))
+  section.items.map(item => ({ ...item, category: section.category }))
 );
 
-const ProductCard = React.memo(({ product, inCart, onAdd, onRemoveOne }) => {
-  const [clicked, setClicked] = useState(false);
-  const priceLabel = '';
-
-  const handleClick = () => {
-    setClicked(true);
-    onAdd(product);
-    setTimeout(() => setClicked(false), 150);
-  };
-
+function ProductCard({ product, inCart, onAdd, onRemoveOne }) {
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{
-        opacity: 1,
-        y: 0,
-        scale: clicked ? 0.96 : 1,
-      }}
-      transition={{ duration: 0.15 }}
-      className={`pos-card${inCart ? ' pos-card-in-cart' : ''}`}
-      onClick={handleClick}
-      whileHover={{ y: -2, boxShadow: 'var(--shadow-md)' }}
-      whileTap={{ scale: 0.97 }}
-    >
-      <div
-        className="pos-card-image"
-        style={{ backgroundImage: `url(${product.image})` }}
-      />
-      <div className="pos-card-top">
-        <span className="pos-card-cat">{product.category}</span>
+    <div className={`pcard${inCart ? ' pcard-incart' : ''}`} onClick={() => onAdd(product)}>
+      <div className="pcard-img" style={{ backgroundImage: `url(${product.image})` }} />
+      <div className="pcard-body">
+        <span className="pcard-name">{product.name}</span>
+        <span className="pcard-price">{formatPrice(product.price)}</span>
       </div>
-      <div className="pos-card-name">{product.name}</div>
-      <div className="pos-card-bottom">
-        <span className="pos-card-price">{priceLabel}</span>
-        <div className="pos-card-actions">
-          {inCart ? (
-            <>
-              <button
-                className="pos-qty-btn pos-qty-minus"
-                onClick={(e) => { e.stopPropagation(); onRemoveOne(product.id); }}
-              >
-                <Minus size={12} />
-              </button>
-              <span className="pos-qty-badge">{inCart.quantity}</span>
-              <button
-                className="pos-qty-btn pos-qty-plus"
-                onClick={(e) => { e.stopPropagation(); onAdd(product); }}
-              >
-                <Plus size={12} />
-              </button>
-            </>
-          ) : (
-            <button
-              className="pos-add-btn"
-              onClick={(e) => { e.stopPropagation(); onAdd(product); }}
-            >
-              <Plus size={14} />
+      <div className="pcard-action">
+        {inCart ? (
+          <>
+            <span className="pcard-qty">{inCart.quantity}</span>
+            <button className="pcard-btn pcard-btn-minus" onClick={e => { e.stopPropagation(); onRemoveOne(product.id); }}>
+              <Minus size={12} />
             </button>
-          )}
-        </div>
+          </>
+        ) : (
+          <span className="pcard-btn pcard-btn-add">
+            <Plus size={14} />
+          </span>
+        )}
       </div>
-    </motion.div>
+    </div>
   );
-});
+}
 
-const POS = () => {
+const POS = ({ onToggleSidebar }) => {
   const [cart, setCart] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [category, setCategory] = useState('Todas');
   const [orderType, setOrderType] = useState('mesa');
   const [mesa, setMesa] = useState('');
+  const [clienteNome, setClienteNome] = useState('');
   const [obs, setObs] = useState('');
   const [step, setStep] = useState('cart');
-  const [showMobileCart, setShowMobileCart] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingOrders, setExistingOrders] = useState([]);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [showCart, setShowCart] = useState(true);
+  const [cartMobileOpen, setCartMobileOpen] = useState(false);
+
+  const mesaNum = mesa.trim();
+
+  useEffect(() => {
+    if (orderType === 'mesa' && mesaNum.length > 0) {
+      const timer = setTimeout(() => fetchExistingOrders(mesa), 400);
+      return () => clearTimeout(timer);
+    } else {
+      setExistingOrders([]);
+    }
+  }, [mesa, orderType]);
+
+  const fetchExistingOrders = async (num) => {
+    try {
+      const { data } = await supabase
+        .from('pedidos')
+        .select('id, mesa, cliente_nome, status, total, itens, created_at')
+        .eq('mesa', num)
+        .not('status', 'eq', 'pago')
+        .not('status', 'eq', 'cancelado')
+        .order('created_at', { ascending: false });
+      setExistingOrders(data || []);
+    } catch {
+      setExistingOrders([]);
+    }
+  };
 
   const filteredProducts = useMemo(() =>
     allProducts.filter(p =>
@@ -109,35 +97,33 @@ const POS = () => {
     [category, searchTerm]
   );
 
+  const groupedProducts = useMemo(() => {
+    if (category !== 'Todas') return null;
+    return CARDAPIO
+      .map(s => ({ ...s, items: s.items.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase())) }))
+      .filter(s => s.items.length > 0);
+  }, [category, searchTerm]);
+
   const addToCart = (product) => {
     setCart(prev => {
-      const existing = prev.find(i => i.id === product.id);
-      if (existing) return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      const found = prev.find(i => i.id === product.id);
+      if (found) return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
       return [...prev, { ...product, quantity: 1 }];
     });
   };
 
-  const removeOne = (id) => {
-    setCart(prev => prev.map(i => {
-      if (i.id !== id) return i;
-      const q = i.quantity - 1;
-      return q < 1 ? null : { ...i, quantity: q };
-    }).filter(Boolean));
-  };
-
+  const removeOne = (id) => setCart(prev => prev.map(i => i.id === id ? (i.quantity > 1 ? { ...i, quantity: i.quantity - 1 } : null) : i).filter(Boolean));
   const removeFromCart = (id) => setCart(prev => prev.filter(i => i.id !== id));
-
-  const updateQuantity = (id, delta) => {
-    setCart(prev => prev.map(i => {
-      if (i.id !== id) return i;
-      const q = i.quantity + delta;
-      return q < 1 ? null : { ...i, quantity: q };
-    }).filter(Boolean));
-  };
+  const updateQuantity = (id, delta) => setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i).filter(i => i.quantity > 0));
 
   const total = cart.reduce((acc, i) => acc + i.price * i.quantity, 0);
   const itemCount = cart.reduce((acc, i) => acc + i.quantity, 0);
-  const canFinalize = cart.length > 0 && (orderType !== 'mesa' || mesa.trim() !== '');
+  const canFinalize = cart.length > 0 && (orderType !== 'mesa' || mesaNum !== '');
+
+  const handleSelectOrder = (order) => {
+    setSelectedOrderId(order.id);
+    setClienteNome(order.cliente_nome || '');
+  };
 
   const handleFinalize = async () => {
     if (!canFinalize || isSubmitting) return;
@@ -146,556 +132,246 @@ const POS = () => {
       const mesaLabel = orderType === 'mesa' ? mesa : ORDER_TYPES.find(t => t.id === orderType)?.label;
       const orderData = {
         mesa: mesaLabel,
-        cliente_nome: 'Atendente',
+        cliente_nome: clienteNome.trim() || 'Atendente',
         status: 'pendente',
         itens: cart.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
-        total: total,
+        total,
         tipo: orderType,
         observacao: obs || null,
       };
+
+      if (selectedOrderId) {
+        const { data: existing } = await supabase.from('pedidos').select('itens, total, status').eq('id', selectedOrderId).single();
+        if (existing && existing.status !== 'pago' && existing.status !== 'cancelado') {
+          await supabase.from('pedidos').update({
+            itens: [...(existing.itens || []), ...orderData.itens],
+            total: Number(existing.total || 0) + total,
+            status: 'pendente'
+          }).eq('id', selectedOrderId);
+          setStep('finalized');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const { error } = await supabase.from('pedidos').insert([orderData]);
       if (error) throw error;
       setStep('finalized');
-    } catch (err) {
-      console.error('Erro ao finalizar pedido:', err);
+    } catch {
       alert('Erro ao enviar pedido para a cozinha. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handlePrint = () => window.print();
-
   const handleNovoPedido = () => {
     setCart([]);
-    setMesa('');
-    setObs('');
-    setOrderType('mesa');
-    setStep('cart');
-    setSearchTerm('');
-    setCategory('Todas');
-  };
-
-  const clearCart = () => {
-    setCart([]);
-    setObs('');
+    setMesa(''); setClienteNome(''); setObs('');
+    setOrderType('mesa'); setStep('cart');
+    setSearchTerm(''); setCategory('Todas');
+    setSelectedOrderId(null); setExistingOrders([]);
   };
 
   if (step === 'finalized') {
     return (
-      <div className="pos-container">
-        <div className="pos-left">
-          <div>
-            <h1 className="pos-title">Cardápio</h1>
-            <p className="pos-subtitle">Pedido finalizado</p>
-          </div>
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="pos-finalized"
-          >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.15 }}
-              className="pos-finalized-icon"
-            >
-              <CheckCircle size={42} />
-            </motion.div>
-            <h2 className="pos-finalized-title">Pedido Finalizado!</h2>
-            <p className="pos-finalized-desc">
-              {orderType === 'mesa' ? `Mesa ${mesa}` : ORDER_TYPES.find(t => t.id === orderType)?.label}
-              {obs && ` · ${obs}`}
-            </p>
-            <motion.button
-              className="btn btn-secondary"
-              style={{ gap: '0.5rem', marginTop: '0.5rem' }}
-              onClick={handleNovoPedido}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              <RotateCcw size={15} />
-              Novo Pedido
-            </motion.button>
-          </motion.div>
-        </div>
-
-        {/* Finalized right panel */}
-        <div className="pos-right">
-          <div className="pos-cart-header">
-            <div className="pos-cart-header-left">
-              <CheckCircle size={18} color="#059669" />
-              <span className="pos-cart-title" style={{ color: '#059669' }}>Pedido Confirmado</span>
-            </div>
-            <span className="pos-cart-time">
-              {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          </div>
-          <div className="pos-cart-tags">
-            <span className="pos-tag pos-tag-order">
-              {orderType === 'mesa' && <><UtensilsCrossed size={12} /> Mesa {mesa}</>}
-              {orderType === 'balcao' && <><ShoppingCart size={12} /> Balcão</>}
-              {orderType === 'entrega' && <><Bike size={12} /> Entrega</>}
-            </span>
-            {obs && <span className="pos-tag pos-tag-obs"><MessageSquare size={12} /> {obs}</span>}
-          </div>
-          <div className="pos-cart-items">
-            {cart.map(item => (
-              <div key={item.id} className="pos-cart-item pos-cart-item-dim">
-                <div className="pos-cart-item-info">
-                  <div className="pos-cart-item-name">{item.name}</div>
-                  <div className="pos-cart-item-sub"></div>
-                </div>
-                <span className="pos-cart-item-qty">×{item.quantity}</span>
-              </div>
-            ))}
-          </div>
-          <div className="pos-cart-footer">
-            <div className="pos-total-row">
-              <span className="pos-total-label">Total</span>
-              <span className="pos-total-value"></span>
-            </div>
-            <motion.button
-              className="btn btn-primary"
-              style={{ width: '100%', padding: '0.8rem', fontSize: '0.9rem', borderRadius: 'var(--radius-lg)' }}
-              onClick={handlePrint}
-              whileTap={{ scale: 0.97 }}
-            >
-              <Printer size={16} />
-              Imprimir Comprovante
-            </motion.button>
-          </div>
-        </div>
-
-        {/* Printable receipt */}
-        <div id="printable-receipt" className="print-only" style={{ padding: 20, fontFamily: 'monospace', color: 'black', fontSize: 13 }}>
-          <div style={{ textAlign: 'center', marginBottom: 16 }}>
-            <h1 style={{ margin: 0, fontSize: 20 }}>Fino Sabor</h1>
-            <p style={{ margin: '4px 0' }}>Churrascaria</p>
-            <p style={{ margin: '4px 0', fontSize: 11 }}>{new Date().toLocaleString('pt-BR')}</p>
-            <hr />
-          </div>
-          <p style={{ fontWeight: 700, marginBottom: 4 }}>
-            Tipo: {orderType === 'mesa' ? `Mesa ${mesa}` : ORDER_TYPES.find(t => t.id === orderType)?.label}
-          </p>
-          {obs && <p style={{ marginBottom: 8, fontStyle: 'italic' }}>Obs: {obs}</p>}
-          <hr />
-          <table style={{ width: '100%', marginBottom: 12 }}>
-            <tbody>
-              {cart.map(item => (
-                <tr key={item.id}>
-                  <td>{item.quantity}x {item.name}</td>
-                  <td style={{ textAlign: 'right' }}></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <hr />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 15, marginTop: 8 }}>
-            <span>TOTAL:</span>
-            <span></span>
-          </div>
-          <div style={{ textAlign: 'center', marginTop: 20, fontSize: 11 }}>
-            <p>Obrigado pela preferência!</p>
-          </div>
+      <div className="pos-finalized-screen">
+        <div className="pos-finalized-card">
+          <div className="pos-finalized-icon-wrap"><CheckCircle size={48} /></div>
+          <h2>Pedido Finalizado!</h2>
+          <p>{orderType === 'mesa' ? `Mesa ${mesa}` : ORDER_TYPES.find(t => t.id === orderType)?.label}{clienteNome ? ` · ${clienteNome}` : ''}</p>
+          <div className="pos-finalized-total">{formatPrice(total)}</div>
+          <button className="btn btn-primary" onClick={handleNovoPedido} style={{ width: '100%', justifyContent: 'center', gap: '0.5rem' }}>
+            <RotateCcw size={16} /> Novo Pedido
+          </button>
+          <button className="btn btn-ghost" onClick={window.print} style={{ width: '100%', justifyContent: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <Printer size={16} /> Imprimir
+          </button>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="pos-container">
-      {/* ===== LEFT: Product Grid ===== */}
-      <div className="pos-left">
-        {/* Header */}
-        <div className="pos-header">
-          <div>
-            <h1 className="pos-title">Cardápio</h1>
-            <p className="pos-subtitle">
-              {category === 'Todas' ? `${filteredProducts.length} itens` : filteredProducts.length > 0 ? `${filteredProducts.length} ${filteredProducts.length === 1 ? 'item' : 'itens'}` : 'Nenhum item'}
-            </p>
+  const renderProducts = () => (
+    <div className="pos-products-area">
+      {category === 'Todas' && groupedProducts ? (
+        groupedProducts.map(section => (
+          <div key={section.category}>
+            <div className="pos-cat-head"><span>{section.category}</span></div>
+            <div className="pcard-grid">
+              {section.items.map(product => (
+                <ProductCard key={product.id} product={product} inCart={cart.find(i => i.id === product.id)} onAdd={addToCart} onRemoveOne={removeOne} />
+              ))}
+            </div>
           </div>
-          {itemCount > 0 && (
-            <motion.button
-              className="pos-cart-btn-desktop"
-              onClick={() => setShowMobileCart(true)}
-              whileTap={{ scale: 0.95 }}
-            >
-              <ShoppingCart size={16} />
-              <span>{itemCount}</span>
-            </motion.button>
+        ))
+      ) : (
+        <div className="pcard-grid">
+          {filteredProducts.length === 0 ? (
+            <div className="pos-empty"><AlertCircle size={24} /><p>Nenhum item encontrado</p></div>
+          ) : (
+            filteredProducts.map(product => (
+              <ProductCard key={product.id} product={product} inCart={cart.find(i => i.id === product.id)} onAdd={addToCart} onRemoveOne={removeOne} />
+            ))
           )}
         </div>
+      )}
+    </div>
+  );
 
-        {/* Search */}
-        <div className="pos-search">
-          <Search size={15} className="pos-search-icon" />
-          <input
-            type="text"
-            placeholder="Buscar prato, bebida..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pos-search-input"
-          />
-          {searchTerm && (
-            <button onClick={() => setSearchTerm('')} className="pos-search-clear">
-              <X size={14} />
-            </button>
-          )}
-        </div>
-
-        {/* Categories */}
-        <div className="pos-categories">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              className={`pos-cat-btn${category === cat ? ' active' : ''}`}
-              onClick={() => setCategory(cat)}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Products Grid */}
-        <div className="pos-products">
-          <AnimatePresence mode="popLayout">
-            {filteredProducts.length === 0 ? (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="pos-products-empty"
-              >
-                <AlertCircle size={24} />
-                <p>Nenhum item encontrado</p>
-              </motion.div>
-            ) : (
-              filteredProducts.map(product => {
-                const inCart = cart.find(i => i.id === product.id);
-                return (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    inCart={inCart}
-                    onAdd={addToCart}
-                    onRemoveOne={removeOne}
-                  />
-                );
-              })
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
-
-      {/* ===== RIGHT: Cart ===== */}
-      <div className="pos-right">
-        <div className="pos-cart-header">
-          <div className="pos-cart-header-left">
-            <ShoppingCart size={18} className="pos-cart-header-icon" />
-            <span className="pos-cart-title">Pedido</span>
-            {itemCount > 0 && <span className="pos-cart-count">{itemCount}</span>}
-          </div>
-          {cart.length > 0 && (
-            <button className="pos-cart-clear" onClick={clearCart}>
-              <Trash2 size={14} />
-              Limpar
-            </button>
-          )}
-        </div>
-
-        {/* Order Type */}
-        <div className="pos-order-type">
-          <span className="pos-label">Tipo de Pedido</span>
-          <div className="pos-order-type-row">
+  const renderCart = () => (
+    <div className="pos-cart">
+      <div className="pos-cart-inner">
+        <div className="pos-cart-section">
+          <div className="pos-cart-order-type">
             {ORDER_TYPES.map(t => {
               const Icon = t.icon;
-              const active = orderType === t.id;
               return (
-                <motion.button
-                  key={t.id}
-                  onClick={() => setOrderType(t.id)}
-                  whileTap={{ scale: 0.95 }}
-                  className={`pos-type-btn${active ? ' active' : ''}`}
-                >
-                  <Icon size={16} />
-                  <span>{t.label}</span>
-                </motion.button>
+                <button key={t.id} className={`pos-order-btn${orderType === t.id ? ' active' : ''}`} onClick={() => setOrderType(t.id)}>
+                  <Icon size={15} /><span>{t.label}</span>
+                </button>
               );
             })}
           </div>
-          <AnimatePresence>
-            {orderType === 'mesa' && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                style={{ overflow: 'hidden' }}
-              >
-                <div className={`pos-mesa-input${mesa ? ' filled' : ''}`}>
-                  <Hash size={14} className="pos-mesa-icon" />
-                  <input
-                    type="number" min="1" placeholder="Número da mesa"
-                    value={mesa} onChange={e => setMesa(e.target.value)}
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Cart Items */}
-        <div className="pos-cart-items">
-          <AnimatePresence mode="popLayout">
-            {cart.length === 0 ? (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="pos-cart-empty"
-              >
-                <div className="pos-cart-empty-icon">
-                  <ShoppingCart size={22} />
-                </div>
-                <p className="pos-cart-empty-title">Carrinho vazio</p>
-                <p className="pos-cart-empty-desc">Clique nos itens do cardápio</p>
-              </motion.div>
-            ) : (
-              cart.map(item => (
-                <motion.div
-                  key={item.id}
-                  layout
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2 }}
-                  className="pos-cart-item"
-                >
-                  <div className="pos-cart-item-info">
-                    <div className="pos-cart-item-name">{item.name}</div>
-                    <div className="pos-cart-item-sub"></div>
-                  </div>
-                  <div className="pos-cart-qty">
-                    <button className="pos-cart-qty-btn" onClick={() => updateQuantity(item.id, -1)}>
-                      <Minus size={10} />
-                    </button>
-                    <span className="pos-cart-qty-val">{item.quantity}</span>
-                    <button className="pos-cart-qty-btn" onClick={() => updateQuantity(item.id, 1)}>
-                      <Plus size={10} />
-                    </button>
-                  </div>
-                  <button className="pos-cart-remove" onClick={() => removeFromCart(item.id)}>
-                    <X size={14} />
-                  </button>
-                </motion.div>
-              ))
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Obs */}
-        {cart.length > 0 && (
-          <div className="pos-cart-obs">
-            <div className="pos-cart-obs-header">
-              <MessageSquare size={13} />
-              <span className="pos-label">Observação</span>
+          {orderType === 'mesa' && (
+            <div className="pos-mesa-wrap">
+              <Hash size={14} className="pos-mesa-icon" />
+              <input type="number" min="1" placeholder="Nº da mesa" value={mesa} onChange={e => { setMesa(e.target.value); setSelectedOrderId(null); }} className="pos-mesa-field" />
+              {selectedOrderId && <span className="pos-mesa-badge">+</span>}
             </div>
-            <textarea
-              rows={1}
-              placeholder="Ex: sem cebola, ponto da carne..."
-              value={obs}
-              onChange={e => setObs(e.target.value)}
-              className="pos-obs-input"
-            />
-          </div>
-        )}
+          )}
+          {existingOrders.length > 0 && (
+            <div className="pos-existing">
+              <div className="pos-existing-title">Pedidos nesta mesa:</div>
+              {existingOrders.map(order => (
+                <button key={order.id} className={`pos-existing-item${selectedOrderId === order.id ? ' selected' : ''}`} onClick={() => handleSelectOrder(order)}>
+                  <span>{order.cliente_nome || 'Sem nome'} · {order.itens?.length || 0} itens</span>
+                  <span className="pos-existing-total">{formatPrice(order.total)}</span>
+                </button>
+              ))}
+              {selectedOrderId && <div className="pos-existing-hint">Itens serão adicionados</div>}
+            </div>
+          )}
+        </div>
 
-        {/* Footer */}
-        <div className="pos-cart-footer">
-          {cart.length > 0 && (
-            <>
-              <div className="pos-subtotal">
-                <span>{itemCount} {itemCount === 1 ? 'item' : 'itens'}</span>
-                <span></span>
-              </div>
-              <div className="pos-divider" />
-            </>
-          )}
-          <div className="pos-total-row">
-            <span className="pos-total-label">Total</span>
-            <span className="pos-total-value"></span>
+        <div className="pos-cart-section">
+          <div className="pos-cart-field">
+            <User size={14} />
+            <input type="text" placeholder="Nome do cliente" value={clienteNome} onChange={e => setClienteNome(e.target.value)} />
           </div>
-          {cart.length > 0 && orderType === 'mesa' && !mesa.trim() && (
-            <p className="pos-hint"><Hash size={11} /> Informe o número da mesa</p>
+        </div>
+
+        <div className="pos-cart-items">
+          {cart.length === 0 ? (
+            <div className="pos-cart-empty">
+              <ShoppingCart size={28} />
+              <p>Carrinho vazio</p>
+              <span>Clique nos itens do cardápio</span>
+            </div>
+          ) : (
+            cart.map(item => (
+              <div key={item.id} className="pos-cart-row">
+                <div className="pos-cart-row-info">
+                  <div className="pos-cart-row-name">{item.name}</div>
+                  <div className="pos-cart-row-sub">{formatPrice(item.price)}</div>
+                </div>
+                <div className="pos-cart-row-qty">
+                  <button className="pos-cart-row-btn" onClick={() => updateQuantity(item.id, -1)}><Minus size={10} /></button>
+                  <span className="pos-cart-row-val">{item.quantity}</span>
+                  <button className="pos-cart-row-btn" onClick={() => updateQuantity(item.id, 1)}><Plus size={10} /></button>
+                </div>
+                <button className="pos-cart-row-rm" onClick={() => removeFromCart(item.id)}><X size={13} /></button>
+              </div>
+            ))
           )}
-          <motion.button
-            className="btn btn-primary pos-btn-finalize"
-            disabled={!canFinalize || isSubmitting}
-            onClick={handleFinalize}
-            whileTap={canFinalize ? { scale: 0.97 } : {}}
-          >
-            {isSubmitting ? 'Enviando...' : <><ChevronRight size={16} /> Finalizar Pedido</>}
-          </motion.button>
+        </div>
+
+        <div className="pos-cart-field" style={{ margin: '0 1rem 0.5rem' }}>
+          <MessageSquare size={14} />
+          <input type="text" placeholder="Observação (ex: sem cebola)" value={obs} onChange={e => setObs(e.target.value)} />
+        </div>
+
+        <div className="pos-cart-footer">
+          <div className="pos-cart-total-row">
+            <span>{itemCount} {itemCount === 1 ? 'item' : 'itens'}</span>
+            <span className="pos-cart-total-val">{formatPrice(total)}</span>
+          </div>
+          <button className="pos-cart-finalize" disabled={!canFinalize || isSubmitting} onClick={handleFinalize}>
+            {isSubmitting ? 'Enviando...' : <><ChevronRight size={18} /> Finalizar Pedido</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="pos">
+      <div className="pos-topbar">
+        <div className="pos-topbar-left">
+          <button className="pos-topbar-menu-btn" onClick={onToggleSidebar} aria-label="Abrir menu">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+          <UtensilsCrossed size={18} className="pos-topbar-icon" />
+          <span className="pos-topbar-title">Cardápio</span>
+          <span className="pos-topbar-count">{allProducts.length} itens</span>
+        </div>
+        <div className="pos-topbar-right">
+          <button className="pos-topbar-cart-btn" onClick={() => setCartMobileOpen(true)}>
+            <ShoppingCart size={16} />
+            {itemCount > 0 && <span className="pos-topbar-badge">{itemCount > 99 ? '99+' : itemCount}</span>}
+          </button>
         </div>
       </div>
 
-      {/* Mobile FAB */}
+      <div className="pos-search-wrap">
+        <Search size={16} className="pos-search-icon" />
+        <input className="pos-search-field" type="text" placeholder="Buscar prato, bebida..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+        {searchTerm && <button className="pos-search-clear" onClick={() => setSearchTerm('')}><X size={15} /></button>}
+      </div>
+
+      <div className="pos-cats">
+        {categories.map(cat => (
+          <button key={cat} className={`pos-cat${category === cat ? ' active' : ''}`} onClick={() => setCategory(cat)}>{cat}</button>
+        ))}
+      </div>
+
+      <div className="pos-body">
+        <div className="pos-body-main">
+          {renderProducts()}
+        </div>
+        <div className="pos-body-cart">
+          {renderCart()}
+        </div>
+      </div>
+
       {itemCount > 0 && (
-        <motion.button
-          className="pos-fab"
-          onClick={() => setShowMobileCart(true)}
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <ShoppingCart size={22} />
-          <span className="pos-fab-badge">{itemCount}</span>
-        </motion.button>
+        <div className="pos-bar" onClick={() => setCartMobileOpen(true)}>
+          <div className="pos-bar-info">
+            <ShoppingCart size={16} />
+            <span>{itemCount} {itemCount === 1 ? 'item' : 'itens'}</span>
+          </div>
+          <div className="pos-bar-right">
+            <span className="pos-bar-total">{formatPrice(total)}</span>
+            <ChevronRight size={16} />
+          </div>
+        </div>
       )}
 
-      {/* Mobile Sheet */}
-      <AnimatePresence>
-        {showMobileCart && (
-          <>
-            <motion.div
-              className="pos-sheet-overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowMobileCart(false)}
-            />
-            <motion.div
-              className="pos-sheet"
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 300, mass: 0.8 }}
-            >
-              <div className="pos-sheet-handle" onClick={() => setShowMobileCart(false)}>
-                <div className="pos-sheet-handle-bar" />
-              </div>
-              {/* Mobile cart content */}
-              <div className="pos-sheet-content">
-                <div className="pos-cart-header">
-                  <div className="pos-cart-header-left">
-                    <ShoppingCart size={18} />
-                    <span className="pos-cart-title">Pedido</span>
-                    {itemCount > 0 && <span className="pos-cart-count">{itemCount}</span>}
-                  </div>
-                  {cart.length > 0 && (
-                    <button className="pos-cart-clear" onClick={clearCart}>
-                      <Trash2 size={14} /> Limpar
-                    </button>
-                  )}
-                </div>
-                <div className="pos-order-type">
-                  <span className="pos-label">Tipo de Pedido</span>
-                  <div className="pos-order-type-row">
-                    {ORDER_TYPES.map(t => {
-                      const Icon = t.icon;
-                      const active = orderType === t.id;
-                      return (
-                        <motion.button
-                          key={t.id}
-                          onClick={() => setOrderType(t.id)}
-                          whileTap={{ scale: 0.95 }}
-                          className={`pos-type-btn${active ? ' active' : ''}`}
-                        >
-                          <Icon size={16} />
-                          <span>{t.label}</span>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                  <AnimatePresence>
-                    {orderType === 'mesa' && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        style={{ overflow: 'hidden' }}
-                      >
-                        <div className={`pos-mesa-input${mesa ? ' filled' : ''}`}>
-                          <Hash size={14} className="pos-mesa-icon" />
-                          <input type="number" min="1" placeholder="Número da mesa" value={mesa} onChange={e => setMesa(e.target.value)} />
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                <div className="pos-cart-items">
-                  <AnimatePresence mode="popLayout">
-                    {cart.length === 0 ? (
-                      <div className="pos-cart-empty">
-                        <div className="pos-cart-empty-icon"><ShoppingCart size={22} /></div>
-                        <p className="pos-cart-empty-title">Carrinho vazio</p>
-                        <p className="pos-cart-empty-desc">Clique nos itens do cardápio</p>
-                      </div>
-                    ) : (
-                      cart.map(item => (
-                        <motion.div
-                          key={item.id}
-                          layout
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                          className="pos-cart-item"
-                        >
-                          <div className="pos-cart-item-info">
-                            <div className="pos-cart-item-name">{item.name}</div>
-                            <div className="pos-cart-item-sub"></div>
-                          </div>
-                          <div className="pos-cart-qty">
-                            <button className="pos-cart-qty-btn" onClick={() => updateQuantity(item.id, -1)}><Minus size={10} /></button>
-                            <span className="pos-cart-qty-val">{item.quantity}</span>
-                            <button className="pos-cart-qty-btn" onClick={() => updateQuantity(item.id, 1)}><Plus size={10} /></button>
-                          </div>
-                          <button className="pos-cart-remove" onClick={() => removeFromCart(item.id)}><X size={14} /></button>
-                        </motion.div>
-                      ))
-                    )}
-                  </AnimatePresence>
-                </div>
-                {cart.length > 0 && (
-                  <div className="pos-cart-obs">
-                    <div className="pos-cart-obs-header">
-                      <MessageSquare size={13} />
-                      <span className="pos-label">Observação</span>
-                    </div>
-                    <textarea rows={2} placeholder="Ex: sem cebola, ponto da carne..." value={obs} onChange={e => setObs(e.target.value)} className="pos-obs-input" />
-                  </div>
-                )}
-                <div className="pos-cart-footer">
-                  {cart.length > 0 && (
-                    <>
-                      <div className="pos-subtotal">
-                        <span>{itemCount} {itemCount === 1 ? 'item' : 'itens'}</span>
-                        <span></span>
-                      </div>
-                      <div className="pos-divider" />
-                    </>
-                  )}
-                  <div className="pos-total-row">
-                    <span className="pos-total-label">Total</span>
-                    <span className="pos-total-value"></span>
-                  </div>
-                  {cart.length > 0 && orderType === 'mesa' && !mesa.trim() && (
-                    <p className="pos-hint"><Hash size={11} /> Informe o número da mesa</p>
-                  )}
-                  <motion.button
-                    className="btn btn-primary pos-btn-finalize"
-                    disabled={!canFinalize || isSubmitting}
-                    onClick={() => { handleFinalize(); setShowMobileCart(false); }}
-                    whileTap={canFinalize ? { scale: 0.97 } : {}}
-                  >
-                    {isSubmitting ? 'Enviando...' : <><ChevronRight size={16} /> Finalizar Pedido</>}
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      {cartMobileOpen && (
+        <div className="pos-overlay" onClick={() => setCartMobileOpen(false)}>
+          <div className="pos-drawer" onClick={e => e.stopPropagation()}>
+            <div className="pos-drawer-handle" onClick={() => setCartMobileOpen(false)}>
+              <div className="pos-drawer-handle-bar" />
+            </div>
+            <div className="pos-drawer-body">
+              {renderCart()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

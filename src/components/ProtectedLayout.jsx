@@ -14,6 +14,7 @@ const ProtectedLayout = () => {
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -111,7 +112,8 @@ const ProtectedLayout = () => {
 
   return (
     <div className="container">
-      <Sidebar role={role} />
+      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+      <Sidebar role={role} sidebarOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className="main-content">
         <Routes>
           <Route path="/" element={<Dashboard />} />
@@ -122,7 +124,7 @@ const ProtectedLayout = () => {
               <Route path="/settings" element={<Settings />} />
             </>
           )}
-          <Route path="/pos" element={<POS />} />
+          <Route path="/pos" element={<POS onToggleSidebar={() => setSidebarOpen(prev => !prev)} />} />
           <Route path="/cozinha" element={<Cozinha />} />
           <Route path="*" element={<Navigate to="/app" replace />} />
         </Routes>

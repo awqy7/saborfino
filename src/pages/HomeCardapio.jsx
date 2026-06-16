@@ -123,21 +123,18 @@ function Icon({ name, className = "" }) {
 }
 
 function formatPrice(price) {
-  return "";
+  if (!price) return "";
+  return `R$ ${price.toFixed(2).replace('.', ',')}`;
 }
 
-function DishCard({ item, index }) {
+function DishCard({ item }) {
   return (
     <article className="dish-card">
-      <span className="dish-number">{String(index + 1).padStart(2, "0")}</span>
-      <div
-        className="dish-shot"
-        style={{ backgroundImage: `url(${item.image})` }}
-        aria-hidden="true"
-      />
-      <button className="dish-flame" aria-label="Prato em destaque">
-        <Icon name="flame" />
-      </button>
+      {item.image ? (
+        <div className="dish-shot" style={{ backgroundImage: `url(${item.image})` }} aria-hidden="true" />
+      ) : (
+        <div className="dish-shot dish-shot-placeholder" aria-hidden="true" />
+      )}
       <div className="dish-copy">
         <h3>{item.name}</h3>
         {item.desc && <p>{item.desc}</p>}
@@ -179,7 +176,7 @@ function MenuCategory({ section, isFirst = false, onCategoryClick }) {
 
       <div className="dish-grid" style={{ marginTop: 13 }}>
         {section.items.map((item, idx) => (
-          <DishCard item={item} index={idx} key={item.id} />
+          <DishCard item={item} key={item.id} />
         ))}
       </div>
     </div>
@@ -328,7 +325,7 @@ export default function HomeCardapio() {
 
             <div className="dish-grid" style={{ marginTop: 13 }}>
               {section.items.map((item, idx) => (
-                <DishCard item={item} index={idx} key={item.id} />
+                <DishCard item={item} key={item.id} />
               ))}
             </div>
           </div>
@@ -828,10 +825,11 @@ export default function HomeCardapio() {
           margin: 0 auto;
         }
         .dish-card {
-          position: relative;
-          height: 158px;
-          padding: 28px 18px 14px 137px;
-          overflow: hidden;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          height: 140px;
+          padding: 0 1rem 0 0.75rem;
           border: 1px solid rgba(255, 255, 255, 0.16);
           border-radius: 10px;
           background:
@@ -846,30 +844,11 @@ export default function HomeCardapio() {
           height: 1px;
           background: linear-gradient(90deg, transparent, rgba(255, 132, 14, 0.13), transparent);
         }
-        .dish-number {
-          position: absolute;
-          left: 14px;
-          top: 12px;
-          z-index: 2;
-          display: inline-grid;
-          width: 27px;
-          height: 22px;
-          place-items: center;
-          color: var(--orange);
-          border: 1px solid var(--orange);
-          border-radius: 6px;
-          background: #12100d;
-          font-size: 11.5px;
-          font-weight: 800;
-        }
         .dish-shot {
-          position: absolute;
-          left: 13px;
-          bottom: 13px;
-          width: 122px;
-          height: 111px;
-          overflow: hidden;
-          border-radius: 8px;
+          width: 110px;
+          height: 110px;
+          flex-shrink: 0;
+          border-radius: 10px;
           background-image:
             linear-gradient(180deg, rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.25)),
             radial-gradient(ellipse at 64% 60%, rgba(191, 112, 26, 0.72) 0 18%, transparent 42%),
@@ -878,55 +857,39 @@ export default function HomeCardapio() {
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
-          box-shadow: 14px 0 24px rgba(0, 0, 0, 0.36);
         }
-        .dish-flame {
-          position: absolute;
-          right: 15px;
-          top: 13px;
-          display: grid;
-          width: 27px;
-          height: 27px;
-          place-items: center;
-          color: var(--orange);
-          border: 1px solid rgba(255, 132, 14, 0.55);
-          border-radius: 999px;
-          background: rgba(9, 9, 9, 0.68);
-          cursor: pointer;
+        .dish-shot-placeholder {
+          background: linear-gradient(135deg, #1d120d, #2a160c);
         }
-        .dish-flame svg {
-          width: 15px;
-          height: 15px;
-          fill: rgba(255, 132, 14, 0.12);
+        .dish-copy {
+          flex: 1;
+          min-width: 0;
         }
         .dish-copy h3 {
-          margin: 0 0 7px;
+          margin: 0 0 6px;
           font-family: Georgia, "Times New Roman", serif;
           font-size: 15.8px;
-          line-height: 1.04;
-          letter-spacing: 0;
+          line-height: 1.15;
           color: #f5eee8;
-          text-shadow: 0 3px 14px rgba(0, 0, 0, 0.55);
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
         }
         .dish-copy p {
-          margin: 0;
+          margin: 0 0 6px;
           color: #c0bbb7;
           font-size: 11.2px;
-          line-height: 1.18;
+          line-height: 1.25;
           display: -webkit-box;
-          -webkit-line-clamp: 3;
+          -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
         }
         .dish-copy strong {
           display: block;
-          margin-top: 7px;
           color: var(--orange);
-          font-size: 15px;
+          font-size: 14px;
           line-height: 1;
         }
         .features-row {
@@ -1175,26 +1138,14 @@ export default function HomeCardapio() {
             gap: 10px;
           }
           .dish-card {
-            height: 142px;
-            padding: 32px 48px 13px 132px;
-            border-color: rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
+            height: 130px;
+            gap: 0.85rem;
+            padding: 0 0.85rem 0 0.65rem;
           }
           .dish-shot {
-            left: 12px;
-            top: 31px;
-            bottom: auto;
-            width: 108px;
-            height: 96px;
-            border-radius: 8px;
-          }
-          .dish-number {
-            left: 12px;
-            top: 10px;
-          }
-          .dish-flame {
-            right: 12px;
-            top: 10px;
+            width: 100px;
+            height: 100px;
+            border-radius: 9px;
           }
           .dish-copy h3 {
             font-size: 17px;
@@ -1304,15 +1255,13 @@ export default function HomeCardapio() {
             height: 44px;
           }
           .dish-card {
-            height: 138px;
-            min-height: 0;
-            padding: 31px 40px 12px 126px;
+            height: 120px;
+            gap: 0.75rem;
+            padding: 0 0.75rem 0 0.55rem;
           }
           .dish-shot {
-            left: 11px;
-            top: 31px;
-            width: 103px;
-            height: 93px;
+            width: 90px;
+            height: 90px;
           }
           .dish-copy h3,
           .dish-copy p {

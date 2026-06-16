@@ -8,19 +8,23 @@ import {
   Settings, 
   LogOut,
   UtensilsCrossed,
-  ChevronRight
+  X
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 
 import { ROLE_DONO, ROLE_ATENDENTE } from '../lib/roles';
 
-const Sidebar = ({ role }) => {
+const Sidebar = ({ role, sidebarOpen, onClose }) => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/');
+  };
+
+  const handleNavClick = () => {
+    if (onClose) onClose();
   };
 
   const allNavItems = [
@@ -35,22 +39,27 @@ const Sidebar = ({ role }) => {
   const navItems = allNavItems.filter(item => item.roles.includes(role));
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${sidebarOpen ? ' open' : ''}`}>
       {/* Brand */}
-      <motion.div 
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="sidebar-brand"
-      >
-        <div className="brand-logo">
-          <UtensilsCrossed size={20} color="white" strokeWidth={2.5} />
-        </div>
-        <div className="brand-text">
-          <div className="brand-name">Fino Sabor</div>
-          <div className="brand-sub">Sistema de Gestão</div>
-        </div>
-      </motion.div>
+      <div className="sidebar-brand-row">
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="sidebar-brand"
+        >
+          <div className="brand-logo">
+            <UtensilsCrossed size={20} color="white" strokeWidth={2.5} />
+          </div>
+          <div className="brand-text">
+            <div className="brand-name">Fino Sabor</div>
+            <div className="brand-sub">Sistema de Gestão</div>
+          </div>
+        </motion.div>
+        <button className="sidebar-close-btn" onClick={onClose} aria-label="Fechar menu">
+          <X size={18} />
+        </button>
+      </div>
 
       {/* Nav */}
       <nav className="sidebar-nav">
@@ -69,6 +78,7 @@ const Sidebar = ({ role }) => {
                 end={item.path === '/app'}
                 className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
                 title={item.label}
+                onClick={handleNavClick}
               >
                 <span className="nav-icon">
                   <Icon size={18} strokeWidth={2} />

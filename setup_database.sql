@@ -1,6 +1,8 @@
--- SQL Completo e à Prova de Erros para rodar no Supabase
+-- ============================================================
+-- SQL ÚNICO — Roda no SQL Editor do Supabase (tudo ou nada)
+-- ============================================================
 
--- 1. Criação das Tabelas (Ignora se já existirem)
+-- 1. CRIAÇÃO DAS TABELAS
 CREATE TABLE IF NOT EXISTS pedidos (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   mesa varchar(50),
@@ -25,78 +27,68 @@ CREATE TABLE IF NOT EXISTS perfis (
   created_at timestamp with time zone DEFAULT now()
 );
 
--- 2. Insere a configuração inicial
+-- 2. CONFIGURAÇÃO INICIAL
 INSERT INTO configuracoes (chave, valor) VALUES ('pratos_do_dia', '[]'::jsonb) ON CONFLICT (chave) DO NOTHING;
 
--- 3. Configuração do Realtime (Remove antes de adicionar para evitar erro 42710)
+-- 3. REALTIME
 DO $$
 BEGIN
-    ALTER PUBLICATION supabase_realtime DROP TABLE pedidos;
+  ALTER PUBLICATION supabase_realtime DROP TABLE pedidos;
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 DO $$
 BEGIN
-    ALTER PUBLICATION supabase_realtime DROP TABLE configuracoes;
+  ALTER PUBLICATION supabase_realtime DROP TABLE configuracoes;
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 DO $$
 BEGIN
-    ALTER PUBLICATION supabase_realtime DROP TABLE perfis;
+  ALTER PUBLICATION supabase_realtime DROP TABLE perfis;
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 ALTER PUBLICATION supabase_realtime ADD TABLE pedidos, configuracoes, perfis;
 
--- 4. Segurança (RLS)
+-- 4. RLS — PEDIDOS (acesso público)
 ALTER TABLE pedidos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE configuracoes ENABLE ROW LEVEL SECURITY;
 
--- Remove políticas antigas para não dar erro
 DROP POLICY IF EXISTS "Permitir leitura pública" ON pedidos;
 DROP POLICY IF EXISTS "Permitir inserção pública" ON pedidos;
 DROP POLICY IF EXISTS "Permitir atualização pública" ON pedidos;
+
+CREATE POLICY "Permitir leitura pública" ON pedidos FOR SELECT USING (true);
+CREATE POLICY "Permitir inserção pública" ON pedidos FOR INSERT WITH CHECK (true);
+CREATE POLICY "Permitir atualização pública" ON pedidos FOR UPDATE USING (true);
+
+-- 5. RLS — CONFIGURAÇÕES (acesso público)
+ALTER TABLE configuracoes ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Permitir leitura pública configs" ON configuracoes;
 DROP POLICY IF EXISTS "Permitir atualização pública configs" ON configuracoes;
 DROP POLICY IF EXISTS "Permitir inserção pública configs" ON configuracoes;
 
--- Cria políticas novas
-CREATE POLICY "Permitir leitura pública" ON pedidos FOR SELECT USING (true);
-CREATE POLICY "Permitir inserção pública" ON pedidos FOR INSERT WITH CHECK (true);
-CREATE POLICY "Permitir atualização pública" ON pedidos FOR UPDATE USING (true);
-
 CREATE POLICY "Permitir leitura pública configs" ON configuracoes FOR SELECT USING (true);
 CREATE POLICY "Permitir atualização pública configs" ON configuracoes FOR UPDATE USING (true);
 CREATE POLICY "Permitir inserção pública configs" ON configuracoes FOR INSERT WITH CHECK (true);
 
--- 5. Políticas da tabela perfis
+-- 6. RLS — PERFIS (apenas autenticados)
 ALTER TABLE perfis ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Permitir leitura autenticado perfil" ON perfis;
 DROP POLICY IF EXISTS "Permitir inserção admin perfil" ON perfis;
+DROP POLICY IF EXISTS "Permitir atualização admin perfil" ON perfis;
 
 CREATE POLICY "Permitir leitura autenticado perfil" ON perfis FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Permitir inserção admin perfil" ON perfis FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Permitir atualização admin perfil" ON perfis FOR UPDATE USING (auth.role() = 'authenticated');
 
--- 6. Instrução para cadastrar perfis (rode no SQL Editor do Supabase)
--- ================================================================
--- EXEMPLO: Cadastrar dono (troque pelo email real do dono)
--- INSERT INTO auth.users (email) VALUES ('dono@finosabor.com') ON CONFLICT DO NOTHING;
--- 
--- Depois de criar o usuário no Authentication do Supabase, rode:
--- INSERT INTO perfis (id, email, role)
--- VALUES (
---   (SELECT id FROM auth.users WHERE email = 'dono@finosabor.com'),
---   'dono@finosabor.com',
---   'dono'
--- );
---
--- INSERT INTO perfis (id, email, role)
--- VALUES (
---   (SELECT id FROM auth.users WHERE email = 'atendente@finosabor.com'),
---   'atendente@finosabor.com',
---   'atendente'
--- );
+-- 7. CADASTRO DOS PERFIS (troque os e-mails pelos seus)
+-- Os usuários precisam existir no Authentication do Supabase primeiro.
+
+INSERT INTO perfis (id, email, role)
+VALUES
+  ((SELECT id FROM auth.users WHERE email = 'dono@finosabor.com'), 'dono@finosabor.com', 'dono'),
+  ((SELECT id FROM auth.users WHERE email = 'atendente@finosabor.com'), 'atendente@finosabor.com', 'atendente')
+ON CONFLICT (id) DO UPDATE SET role = EXCLUDED.role;
