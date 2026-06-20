@@ -937,7 +937,7 @@ img { max-width: 100%; }
   width: 80px;
   height: 70px;
   border-radius: 8px;
-  background-size: cover;
+  background-size: 115%;
   background-position: center;
   flex-shrink: 0;
   box-shadow: 8px 0 16px rgba(0,0,0,0.28);
@@ -1330,7 +1330,7 @@ img { max-width: 100%; }
 .pcard-img {
   width: calc(100% - 0.5rem);
   aspect-ratio: 16 / 9;
-  background-size: cover;
+  background-size: 115%;
   background-position: center;
   background-repeat: no-repeat;
   background-color: #1a1a2e;

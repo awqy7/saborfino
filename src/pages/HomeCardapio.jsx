@@ -854,7 +854,7 @@ export default function HomeCardapio() {
             radial-gradient(ellipse at 64% 60%, rgba(191, 112, 26, 0.72) 0 18%, transparent 42%),
             radial-gradient(ellipse at 35% 45%, rgba(96, 42, 19, 0.9) 0 16%, transparent 39%),
             linear-gradient(135deg, #1d120d, #59351d 42%, #0a0a0a);
-          background-size: cover;
+          background-size: 115%;
           background-position: center;
           background-repeat: no-repeat;
         }
