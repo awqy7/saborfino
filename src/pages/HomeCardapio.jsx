@@ -1,5 +1,9 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import CARDAPIO from "../data/cardapio";
+import { MENU_DISPLAY } from "../data/cardapio";
+
+const slugify = (str) =>
+  str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-");
 
 const navItems = ["In\u00edcio", "Card\u00e1pio", "Sobre n\u00f3s", "Unidades", "Contato"];
 
@@ -128,25 +132,73 @@ function formatPrice(price) {
 }
 
 function DishCard({ item }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasVariants = Array.isArray(item.variants) && item.variants.length > 0;
+
   return (
-    <article className="dish-card">
-      {item.image ? (
-        <div className="dish-shot" style={{ backgroundImage: `url(${item.image})` }} aria-hidden="true" />
-      ) : (
-        <div className="dish-shot dish-shot-placeholder" aria-hidden="true" />
-      )}
-      <div className="dish-copy">
-        <h3>{item.name}</h3>
-        {item.desc && <p>{item.desc}</p>}
-        <strong>{formatPrice(item.price)}</strong>
+    <article
+      className={`dish-card${hasVariants ? " dish-card-expandable" : ""}${expanded ? " dish-card-open" : ""}`}
+      onClick={hasVariants ? () => setExpanded((v) => !v) : undefined}
+      onKeyDown={
+        hasVariants
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setExpanded((v) => !v);
+              }
+            }
+          : undefined
+      }
+      role={hasVariants ? "button" : undefined}
+      tabIndex={hasVariants ? 0 : undefined}
+      aria-expanded={hasVariants ? expanded : undefined}
+    >
+      <div className="dish-main">
+        {item.image ? (
+          <div className="dish-shot" style={{ backgroundImage: `url(${item.image})` }} aria-hidden="true" />
+        ) : (
+          <div className="dish-shot dish-shot-placeholder" aria-hidden="true" />
+        )}
+        <div className="dish-copy">
+          <h3>{item.name}</h3>
+          {item.desc && <p>{item.desc}</p>}
+          <div className="dish-meta">
+            {formatPrice(item.price) && <strong>{formatPrice(item.price)}</strong>}
+            {hasVariants && (
+              <span className="dish-variants-badge">
+                {item.variantLabel || `${item.variants.length} opções`}
+                <Icon name="chevron" className={expanded ? "flip" : ""} />
+              </span>
+            )}
+          </div>
+        </div>
       </div>
+
+      {hasVariants && (
+        <div className="dish-variants" aria-hidden={!expanded}>
+          <div className="dish-variants-inner">
+            <ul>
+              {item.variants.map((variant) => (
+                <li key={variant.label}>
+                  <span className="variant-dot" aria-hidden="true" />
+                  <span className="variant-copy">
+                    <b>{variant.label}</b>
+                    {variant.desc && <small>{variant.desc}</small>}
+                  </span>
+                  {formatPrice(variant.price) && <em>{formatPrice(variant.price)}</em>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
     </article>
   );
 }
 
 function MenuCategory({ section, isFirst = false, onCategoryClick }) {
   return (
-    <div className="category-block" style={{ marginBottom: isFirst ? 0 : 30 }}>
+    <div className="category-block" id={`cat-${slugify(section.category)}`} style={{ marginBottom: isFirst ? 0 : 30 }}>
       <div className="category-panel" style={{
         backgroundImage: `
           linear-gradient(90deg, rgba(12,12,12,0.91) 0%, rgba(12,12,12,0.48) 27%, rgba(12,12,12,0) 52%, rgba(12,12,12,0.4) 78%, rgba(12,12,12,0.9) 100%),
@@ -294,41 +346,27 @@ export default function HomeCardapio() {
           </h2>
         </div>
 
-        {CARDAPIO.slice(0, 1).map((section) => (
-          <div key={section.category} style={{ marginBottom: 0 }}>
-            <div className="category-panel" style={{
-              backgroundImage: `
-                linear-gradient(90deg, rgba(12,12,12,0.91) 0%, rgba(12,12,12,0.48) 27%, rgba(12,12,12,0) 52%, rgba(12,12,12,0.4) 78%, rgba(12,12,12,0.9) 100%),
-                url(${section.image}),
-                radial-gradient(ellipse at 52% 54%, rgba(165,75,24,0.7) 0 18%, rgba(61,24,7,0.7) 32%, transparent 55%),
-                linear-gradient(90deg, #130f0d 0%, #2a160c 48%, #0b0b0b 100%)
-              `,
-              backgroundSize: "100% 100%, auto 100%, 100% 100%, 100% 100%",
-              backgroundPosition: "center, center, center, center",
-              backgroundRepeat: "no-repeat",
-            }}>
-              <div className="category-flame">
-                <Icon name="flame" />
-              </div>
-              <div className="category-copy">
-                <Icon name="pot" />
-                <div>
-                  <h3>{section.category}</h3>
-                  <p>{section.items.length} {section.items.length === 1 ? "opção" : "opções"} disponíve{section.items.length === 1 ? "l" : "is"}</p>
-                </div>
-              </div>
-              <button className="category-button" onClick={() => navigate("/order")}>
-                Ver categoria
-                <Icon name="arrow" />
+        <nav className="category-chips" aria-label="Categorias do cardápio">
+          <div className="category-chips-track">
+            {MENU_DISPLAY.map((section) => (
+              <button
+                type="button"
+                key={section.category}
+                onClick={() => scrollTo(`cat-${slugify(section.category)}`)}
+              >
+                {section.category}
               </button>
-            </div>
-
-            <div className="dish-grid" style={{ marginTop: 13 }}>
-              {section.items.map((item, idx) => (
-                <DishCard item={item} key={item.id} />
-              ))}
-            </div>
+            ))}
           </div>
+        </nav>
+
+        {MENU_DISPLAY.slice(0, 1).map((section) => (
+          <MenuCategory
+            section={section}
+            isFirst
+            onCategoryClick={() => navigate("/order")}
+            key={section.category}
+          />
         ))}
 
         <div className="features-row">
@@ -346,7 +384,7 @@ export default function HomeCardapio() {
         </div>
 
         <div className="menu-rest">
-          {CARDAPIO.slice(1).map((section) => (
+          {MENU_DISPLAY.slice(1).map((section) => (
             <MenuCategory
               section={section}
               onCategoryClick={() => navigate("/order")}
@@ -376,7 +414,7 @@ export default function HomeCardapio() {
           --panel: rgba(12, 12, 12, 0.92);
           min-height: 100vh;
           color: var(--text);
-          overflow-x: hidden;
+          overflow-x: clip;
           background:
             radial-gradient(circle at 44% -12%, rgba(255, 119, 0, 0.12), transparent 24%),
             linear-gradient(180deg, #080808 0%, #111211 52%, #0e0f0f 100%);
@@ -825,17 +863,16 @@ export default function HomeCardapio() {
           margin: 0 auto;
         }
         .dish-card {
+          position: relative;
           display: flex;
-          align-items: center;
-          gap: 1rem;
-          height: 140px;
-          padding: 0 1rem 0 0.75rem;
+          flex-direction: column;
           border: 1px solid rgba(255, 255, 255, 0.16);
           border-radius: 10px;
           background:
             linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0)),
             linear-gradient(110deg, rgba(18, 18, 18, 0.95), rgba(10, 10, 10, 0.98));
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+          transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
         }
         .dish-card::after {
           content: "";
@@ -843,6 +880,174 @@ export default function HomeCardapio() {
           inset: auto 0 0;
           height: 1px;
           background: linear-gradient(90deg, transparent, rgba(255, 132, 14, 0.13), transparent);
+        }
+        .dish-card-expandable {
+          cursor: pointer;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .dish-card-expandable:hover,
+        .dish-card-expandable:focus-visible {
+          border-color: rgba(255, 132, 14, 0.45);
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.05),
+            0 6px 24px rgba(0, 0, 0, 0.35);
+          outline: none;
+        }
+        .dish-card-open {
+          border-color: rgba(255, 132, 14, 0.6);
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.05),
+            0 0 0 1px rgba(255, 132, 14, 0.18),
+            0 14px 34px rgba(0, 0, 0, 0.45);
+          transform: translateY(-2px);
+        }
+        .dish-main {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          min-height: 140px;
+          padding: 15px 1rem 15px 0.75rem;
+        }
+        .dish-meta {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .dish-variants-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          height: 24px;
+          padding: 0 10px;
+          border: 1px solid rgba(255, 132, 14, 0.42);
+          border-radius: 999px;
+          background: rgba(255, 132, 14, 0.1);
+          color: var(--orange);
+          font-size: 10.5px;
+          font-weight: 800;
+          letter-spacing: 0.3px;
+          white-space: nowrap;
+        }
+        .dish-variants-badge svg {
+          width: 13px;
+          height: 13px;
+          transition: transform 240ms ease;
+        }
+        .dish-variants-badge svg.flip {
+          transform: rotate(180deg);
+        }
+        .dish-variants {
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: grid-template-rows 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .dish-card-open .dish-variants {
+          grid-template-rows: 1fr;
+        }
+        .dish-variants-inner {
+          overflow: hidden;
+          min-height: 0;
+        }
+        .dish-variants ul {
+          display: flex;
+          flex-direction: column;
+          gap: 7px;
+          margin: 0 12px;
+          padding: 12px 0 12px;
+          list-style: none;
+          border-top: 1px dashed rgba(255, 132, 14, 0.25);
+        }
+        .dish-variants li {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 9px 11px;
+          border: 1px solid rgba(255, 132, 14, 0.15);
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.025);
+        }
+        .variant-dot {
+          flex-shrink: 0;
+          width: 6px;
+          height: 6px;
+          margin-top: 5px;
+          border-radius: 999px;
+          background: var(--orange);
+          box-shadow: 0 0 8px rgba(255, 132, 14, 0.6);
+        }
+        .variant-copy {
+          flex: 1;
+          min-width: 0;
+        }
+        .variant-copy b {
+          display: block;
+          color: #f5eee8;
+          font-size: 12.8px;
+          line-height: 1.2;
+        }
+        .variant-copy small {
+          display: block;
+          margin-top: 3px;
+          color: #b3ada7;
+          font-size: 11px;
+          line-height: 1.35;
+        }
+        .dish-variants li em {
+          margin-left: auto;
+          color: var(--orange);
+          font-size: 13px;
+          font-style: normal;
+          font-weight: 800;
+          white-space: nowrap;
+        }
+        .category-chips {
+          position: sticky;
+          top: 10px;
+          z-index: 20;
+          width: min(1348px, calc(100% - 48px));
+          margin: 0 auto 20px;
+        }
+        .category-chips-track {
+          display: flex;
+          gap: 6px;
+          padding: 7px;
+          overflow-x: auto;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 999px;
+          background: rgba(7, 7, 7, 0.88);
+          backdrop-filter: blur(14px);
+          box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
+          scrollbar-width: none;
+          -webkit-overflow-scrolling: touch;
+        }
+        .category-chips-track::-webkit-scrollbar {
+          display: none;
+        }
+        .category-chips-track button {
+          flex-shrink: 0;
+          height: 34px;
+          padding: 0 16px;
+          border: 1px solid transparent;
+          border-radius: 999px;
+          background: transparent;
+          color: #b6b1ad;
+          font-size: 12.5px;
+          font-weight: 700;
+          white-space: nowrap;
+          cursor: pointer;
+          transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+        }
+        .category-chips-track button:hover,
+        .category-chips-track button:focus-visible {
+          color: var(--orange);
+          border-color: rgba(255, 132, 14, 0.42);
+          background: rgba(255, 132, 14, 0.08);
+          outline: none;
+        }
+        .category-block,
+        .menu-section .category-panel {
+          scroll-margin-top: 78px;
         }
         .dish-shot {
           width: 110px;
@@ -1137,10 +1342,19 @@ export default function HomeCardapio() {
             grid-template-columns: 1fr;
             gap: 10px;
           }
-          .dish-card {
-            height: 130px;
+          .dish-main {
+            min-height: 130px;
             gap: 0.85rem;
-            padding: 0 0.85rem 0 0.65rem;
+            padding: 12px 0.85rem 12px 0.65rem;
+          }
+          .category-chips {
+            top: 8px;
+            margin-bottom: 16px;
+          }
+          .category-chips-track button {
+            height: 36px;
+            padding: 0 15px;
+            font-size: 12px;
           }
           .dish-shot {
             width: 100px;
@@ -1254,10 +1468,17 @@ export default function HomeCardapio() {
             width: 100%;
             height: 44px;
           }
-          .dish-card {
-            height: 120px;
+          .dish-main {
+            min-height: 120px;
             gap: 0.75rem;
-            padding: 0 0.75rem 0 0.55rem;
+            padding: 11px 0.75rem 11px 0.55rem;
+          }
+          .dish-variants ul {
+            margin: 0 10px;
+            padding: 10px 0;
+          }
+          .dish-variants li {
+            padding: 8px 9px;
           }
           .dish-shot {
             width: 90px;

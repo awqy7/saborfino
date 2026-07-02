@@ -209,3 +209,162 @@ export const PRODUCTS = CARDAPIO.flatMap(section =>
     image: item.image,
   }))
 );
+
+// Versão agrupada do cardápio para exibição na vitrine (HomeCardapio).
+// Itens repetidos com tamanhos/opções diferentes viram um único card com "variants".
+export const MENU_DISPLAY = [
+  {
+    category: 'Chapas',
+    image: IMAGES.bannerChapas,
+    items: [
+      {
+        id: 'chapa-mista',
+        name: 'Chapa Mista do Fino Sabor',
+        desc: 'Picanha na chapa, batata frita c/ queijo e bacon e mandioca cozida na manteiga de garrafa',
+        image: IMAGES.dishChapa1,
+        price: 0,
+        variantLabel: '4 tamanhos',
+        variants: [
+          { label: '400g de picanha', desc: '200g de fritas c/ queijo e bacon + 200g de mandioca', price: 0 },
+          { label: '600g de picanha', desc: '200g de fritas c/ queijo e bacon + 200g de mandioca', price: 0 },
+          { label: '800g de picanha', desc: '300g de fritas c/ queijo e bacon + 300g de mandioca', price: 0 },
+          { label: '1kg de picanha', desc: '300g de fritas c/ queijo e bacon + 300g de mandioca', price: 0 },
+        ],
+      },
+      {
+        id: 'chapa-contrafile',
+        name: 'Chapa de Contra Filé',
+        desc: 'Contra filé na chapa, batata frita c/ queijo e bacon e mandioca cozida na manteiga de garrafa',
+        image: IMAGES.dishChapa1,
+        price: 0,
+        variantLabel: '2 tamanhos',
+        variants: [
+          { label: '600g de contra filé', desc: '200g de fritas c/ queijo e bacon + 200g de mandioca', price: 0 },
+          { label: '800g de contra filé', desc: '300g de fritas c/ queijo e bacon + 300g de mandioca', price: 0 },
+        ],
+      },
+    ],
+  },
+  {
+    category: 'Espetos 500g/1kg',
+    image: IMAGES.bannerEspetos400,
+    items: [
+      {
+        id: 'esp-picanha',
+        name: 'Picanha',
+        desc: 'Espeto de picanha na brasa com acompanhamentos',
+        image: IMAGES.dishPicanha500g1kg,
+        price: 0,
+        variantLabel: '2 opções',
+        variants: [
+          { label: 'Completa', desc: 'Arroz ao alho, farofa, vinagrete, cebola assada e fritas c/ bacon e queijo ou mandioca na manteiga', price: 0 },
+          { label: 'Tradicional', desc: 'Vinagrete, farofa, cebola assada e fritas c/ bacon e queijo ou mandioca na manteiga', price: 0 },
+        ],
+      },
+      {
+        id: 'esp-contrafile',
+        name: 'Contra Filé',
+        desc: 'Espeto de contra filé na brasa com acompanhamentos',
+        image: IMAGES.dishContraFile500g1kg,
+        price: 0,
+        variantLabel: '2 opções',
+        variants: [
+          { label: 'Completo', desc: 'Arroz ao alho, farofa, vinagrete, cebola assada e fritas c/ bacon e queijo ou mandioca na manteiga', price: 0 },
+          { label: 'Tradicional', desc: 'Farofa, vinagrete, cebola assada e fritas c/ bacon e queijo ou mandioca na manteiga', price: 0 },
+        ],
+      },
+      {
+        id: 'esp-fraldinha',
+        name: 'Fraldinha',
+        desc: 'Espeto de fraldinha na brasa com acompanhamentos',
+        image: IMAGES.dishFraldinha500g1kg,
+        price: 0,
+        variantLabel: '2 opções',
+        variants: [
+          { label: 'Completa', desc: 'Arroz ao alho, farofa, vinagrete, cebola assada e fritas c/ bacon e queijo ou mandioca na manteiga', price: 0 },
+          { label: 'Tradicional', desc: 'Farofa, vinagrete, cebola assada e fritas c/ bacon e queijo ou mandioca na manteiga', price: 0 },
+        ],
+      },
+      {
+        id: 'esp-frango',
+        name: 'Frango c/ Catupiry',
+        desc: 'Espeto de frango com catupiry na brasa',
+        image: IMAGES.dishFrango500g1kg,
+        price: 0,
+        variantLabel: '2 opções',
+        variants: [
+          { label: 'Completa', desc: 'Arroz ao alho, farofa, vinagrete, cebola assada e fritas c/ bacon e queijo ou mandioca na manteiga', price: 0 },
+          { label: 'Tradicional', desc: 'Farofa, vinagrete, cebola assada e fritas c/ bacon e queijo ou mandioca na manteiga', price: 0 },
+        ],
+      },
+      {
+        id: 'esp-picanha-suina',
+        name: 'Picanha Suína',
+        desc: 'Espeto de picanha suína na brasa',
+        image: IMAGES.dishPicanhaSuina500g1kg,
+        price: 0,
+        variantLabel: '2 opções',
+        variants: [
+          { label: 'Completa', desc: 'Arroz ao alho, farofa, vinagrete, cebola assada e fritas c/ bacon e queijo ou mandioca na manteiga', price: 0 },
+          { label: 'Tradicional', desc: 'Farofa, vinagrete, cebola assada e fritas c/ bacon e queijo ou mandioca na manteiga', price: 0 },
+        ],
+      },
+      {
+        id: 11,
+        name: 'Picanha Família 600g',
+        desc: 'Arroz ao alho, batata frita, tropeiro, vinagrete, farofa e cebola assada',
+        image: IMAGES.dishPicanha500g1kg,
+        price: 0,
+      },
+    ],
+  },
+  ...CARDAPIO.filter(s => !['Chapas', 'Espetos 500g/1kg', 'Guarnições'].includes(s.category)),
+  {
+    category: 'Guarnições',
+    image: IMAGES.bannerGuarnicoes,
+    items: [
+      {
+        id: 55,
+        name: 'Arroz com Alho Torrado',
+        desc: 'Arroz soltinho com alho dourado na hora',
+        image: IMAGES.dishArroz,
+        price: 0,
+        variantLabel: '2 tamanhos',
+        variants: [
+          { label: '01 pessoa', desc: 'Porção individual', price: 0 },
+          { label: '02 pessoas', desc: 'Porção para compartilhar', price: 0 },
+        ],
+      },
+      {
+        id: 56,
+        name: 'Arroz Branco',
+        desc: 'Arroz branco soltinho, feito na hora',
+        image: IMAGES.dishArroz,
+        price: 0,
+        variantLabel: '2 tamanhos',
+        variants: [
+          { label: '01 pessoa', desc: 'Porção individual', price: 0 },
+          { label: '02 pessoas', desc: 'Porção para compartilhar', price: 0 },
+        ],
+      },
+      {
+        id: 57,
+        name: 'Tropeiro',
+        desc: 'Feijão tropeiro mineiro com bacon e couve',
+        image: IMAGES.dishTropeiro,
+        price: 0,
+        variantLabel: '2 tamanhos',
+        variants: [
+          { label: 'Pequeno', desc: 'Porção individual', price: 0 },
+          { label: 'Grande', desc: 'Porção para compartilhar', price: 0 },
+        ],
+      },
+      { id: 58, name: 'Vinagrete', desc: 'Vinagrete tradicional com tomate, cebola, pimentão e cheiro verde', price: 0, image: IMAGES.dishVinagrete },
+      { id: 59, name: 'Farofa', desc: 'Farofa temperada com manteiga, cebola e bacon', price: 0, image: IMAGES.dishFarofa },
+    ],
+  },
+];
+
+// Reordena para manter a mesma ordem original das categorias
+const ORDER = ['Chapas', 'Espetos 500g/1kg', 'Churrasco na Gramatura', 'Porções', 'Entradas', 'Espetos', 'Guarnições', 'Pães de Alho'];
+MENU_DISPLAY.sort((a, b) => ORDER.indexOf(a.category) - ORDER.indexOf(b.category));
