@@ -163,7 +163,7 @@ function buildReceipt(order, station) {
   itens.forEach(item => {
     const name = item.quantity != null ? `${item.quantity}x ${item.name}` : item.name;
     buf.push(txt(name + '\n'));
-    if (item.desc && item.desc.trim()) {
+    if (item.desc && item.desc.trim() && item.category !== 'Drinks') {
       const parts = item.desc.trim()
         .split(/\s+e\s+/)
         .flatMap(p => p.split(/,\s*/))
