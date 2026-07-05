@@ -57,7 +57,7 @@ export const IMAGES = {
   dishFritasQueijo: '/images/dishes/fritas-queijo.jpg',
   dishFritasBacon: '/images/dishes/fritas-bacon.jpg',
   dishFritasQueijoBacon: '/images/dishes/fritas-queijo-bacon.jpg',
-  dishLinguicaPorcao: '/images/dishes/linguica-porcao.jpg',
+  dishLinguicaPorcao: '/images/dishes/linp.png',
   dishLinguicaArtesanal: '/images/dishes/linguica-artesanal.jpg',
   dishLomboPorcao: '/images/dishes/lombo-porcao.jpg',
   dishTilapiaFrita: '/images/dishes/tilapia-frita.jpg',
