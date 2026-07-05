@@ -1,12 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { Clock, Check, Utensils, AlertCircle } from 'lucide-react';
+import { Clock, Check, Utensils, AlertCircle, Printer, Bluetooth, BluetoothConnected, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { connect, disconnect, printOrder, getStatus, onStatusChange } from '../lib/printer';
 
 const Cozinha = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
+  const [printerConnected, setPrinterConnected] = useState(false);
+  const [printerError, setPrinterError] = useState('');
+  const [connectingPrinter, setConnectingPrinter] = useState(false);
+
+  useEffect(() => {
+    setPrinterConnected(getStatus().connected);
+    const unsub = onStatusChange(s => setPrinterConnected(s.connected));
+    return unsub;
+  }, []);
+
+  const handleConnectPrinter = useCallback(async () => {
+    if (printerConnected) {
+      await disconnect();
+      return;
+    }
+    setConnectingPrinter(true);
+    setPrinterError('');
+    try {
+      await connect();
+    } catch (err) {
+      setPrinterError(err.message || 'Falha ao conectar');
+    } finally {
+      setConnectingPrinter(false);
+    }
+  }, [printerConnected]);
+
+  const handlePrintOrder = useCallback(async (order) => {
+    try {
+      await printOrder(order);
+    } catch (err) {
+      alert('Erro ao imprimir: ' + (err.message || ''));
+    }
+  }, []);
 
   useEffect(() => {
     fetchOrders();
@@ -95,7 +129,35 @@ const Cozinha = () => {
             Acompanhe e prepare os pedidos em tempo real
           </p>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button
+            onClick={handleConnectPrinter}
+            disabled={connectingPrinter}
+            title={printerConnected ? 'Desconectar impressora' : 'Conectar impressora térmica'}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.5rem 0.75rem',
+              borderRadius: '8px', border: `1px solid ${printerConnected ? '#22c55e' : 'var(--border)'}`,
+              background: printerConnected ? 'rgba(34,197,94,0.08)' : 'var(--surface)',
+              color: printerConnected ? '#22c55e' : 'var(--text-secondary)',
+              cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
+            }}
+          >
+            {connectingPrinter ? (
+              <span>...</span>
+            ) : printerConnected ? (
+              <><BluetoothConnected size={16} /> Conectado</>
+            ) : (
+              <><Bluetooth size={16} /> Conectar</>
+            )}
+          </button>
+        </div>
       </div>
+      {printerError && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.4rem 0.75rem', marginBottom: '1rem', fontSize: '0.8rem', color: '#ef4444', background: 'rgba(239,68,68,0.08)', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.2)' }}>
+          <AlertCircle size={12} /> {printerError}
+          <button onClick={() => setPrinterError('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '2px' }}><X size={12} /></button>
+        </div>
+      )}
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>Carregando pedidos...</div>
@@ -190,6 +252,22 @@ const Cozinha = () => {
                         <Check size={20} /> Marcar como Pronto
                       </button>
                     )}
+                    <button
+                      onClick={() => handlePrintOrder(order)}
+                      disabled={!printerConnected}
+                      title={printerConnected ? 'Imprimir pedido' : 'Conecte a impressora primeiro'}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem',
+                        padding: '0.5rem', width: '100%',
+                        borderRadius: '8px', border: `1px solid ${printerConnected ? 'var(--border)' : 'var(--border)'}`,
+                        background: printerConnected ? 'var(--surface)' : 'var(--surface-subtle)',
+                        color: printerConnected ? 'var(--text-secondary)' : 'var(--text-muted)',
+                        cursor: printerConnected ? 'pointer' : 'not-allowed',
+                        fontSize: '0.8rem', fontWeight: 600, opacity: printerConnected ? 1 : 0.5,
+                      }}
+                    >
+                      <Printer size={14} /> Imprimir
+                    </button>
                   </div>
                 </motion.div>
               );
