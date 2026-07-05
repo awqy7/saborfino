@@ -27,6 +27,7 @@ export const IMAGES = {
   dishPicanhaSuina: '/images/dishes/picanhasuina.jpg',
   dishPicanhaSuina500g1kg: '/images/dishes/espeto-picanhasuina-churrasco.png',
   dishBolinhos: '/images/dishes/bolinhos.jpg',
+  dishBolinhoMandioca: '/images/dishes/bolinho2.png',
   dishBolinhobacalhau: '/images/dishes/bolinhobacalhau.jpg',
   dishCamarao: '/images/dishes/camarao.jpg',
   dishCoxinha: '/images/dishes/coxinha.jpg',
@@ -104,17 +105,6 @@ const sections = [
     ],
   },
   {
-    category: 'Churrasco na Gramatura',
-    image: IMAGES.bannerGramatura,
-    items: [
-      { id: 20, name: 'Picanha Argentina', desc: 'Pedido mínimo de 400g', price: 0, image: IMAGES.dishPicanha500g1kg },
-      { id: 21, name: 'Fraldinha', desc: 'Pedido mínimo de 400g', price: 0, image: IMAGES.dishFraldinha500g1kg },
-      { id: 22, name: 'Picanha Suína', desc: 'Pedido mínimo de 400g', price: 0, image: IMAGES.dishPicanhaSuina500g1kg },
-      { id: 23, name: 'Frango c/ Catupiry', desc: 'Pedido mínimo de 400g', price: 0, image: IMAGES.dishFrango500g1kg },
-      { id: 24, name: 'Contra Filé', desc: 'Pedido mínimo de 400g', price: 0, image: IMAGES.dishContraFile500g1kg },
-    ],
-  },
-  {
     category: 'Porções',
     image: IMAGES.bannerPorcoes,
     items: [
@@ -138,14 +128,11 @@ const sections = [
     image: IMAGES.bannerEntradas,
     items: [
       { id: 1, name: 'Bolinho de Bacalhau (10 unid.)', desc: '10 unidades de bolinho de bacalhau crocante por fora e macio por dentro', price: 0, image: IMAGES.dishBolinhobacalhau },
-      { id: 2, name: 'Bolinho de Linguiça com Queijo (10 unid.)', desc: '10 unidades de bolinho de linguiça artesanal com queijo derretido', price: 0, image: IMAGES.dishBolinhos },
-      { id: 3, name: 'Kibe com Alho Poró (10 unid.)', desc: '10 unidades de kibe frito com alho poró e temperos especiais', price: 0, image: IMAGES.dishKibe },
       { id: 4, name: 'Torresmo (300g)', desc: '300g de torresmo crocante, pururuca na medida certa', price: 0, image: IMAGES.dishTorresmo },
       { id: 60, name: 'Camafeu de Camarão com Requeijão Cremoso', desc: 'Camarão envolto em massa leve com requeijão cremoso', price: 0, image: IMAGES.dishCamafeu },
-      { id: 61, name: 'Bolinho de Mandioca com Carne Seca e Requeijão', desc: 'Bolinho de mandioca recheado com carne seca desfiada e requeijão', price: 0, image: IMAGES.dishBolinhos },
+      { id: 61, name: 'Bolinho de Mandioca com Carne Seca e Requeijão', desc: 'Bolinho de mandioca recheado com carne seca desfiada e requeijão', price: 0, image: IMAGES.dishBolinhoMandioca },
       { id: 62, name: 'Bolinho de Bacalhau', desc: 'Bolinho de bacalhau desfiado com tempero especial', price: 0, image: IMAGES.dishBolinhobacalhau },
       { id: 63, name: 'Bolinho de Costela Gaúcha Recheada com Queijo Minas', desc: 'Bolinho de costela gaúcha desfiada com queijo minas', price: 0, image: IMAGES.dishBolinhoCostela },
-      { id: 64, name: 'Bolinho de Tilápia', desc: 'Bolinho de tilápia temperada com ervas finas', price: 0, image: IMAGES.dishTilapia },
       { id: 65, name: 'Bolinho de Camarão com Cream Cheese', desc: 'Bolinho de camarão com cream cheese, crocante e cremoso', price: 0, image: IMAGES.dishBolinhoCamarao },
       { id: 66, name: 'Croquete de Bacalhau com Requeijão Cremoso', desc: 'Croquete de bacalhau com requeijão cremoso, empanado e frito', price: 0, image: IMAGES.dishCroquete },
       { id: 67, name: 'Coxinha de Costela 50g', desc: 'Coxinha de costela desfiada, 50g de pura cremosidade', price: 0, image: IMAGES.dishCoxinha },
@@ -366,5 +353,5 @@ export const MENU_DISPLAY = [
 ];
 
 // Reordena para manter a mesma ordem original das categorias
-const ORDER = ['Chapas', 'Espetos 500g/1kg', 'Churrasco na Gramatura', 'Porções', 'Entradas', 'Espetos', 'Guarnições', 'Pães de Alho'];
+const ORDER = ['Chapas', 'Espetos 500g/1kg', 'Porções', 'Entradas', 'Espetos', 'Guarnições', 'Pães de Alho'];
 MENU_DISPLAY.sort((a, b) => ORDER.indexOf(a.category) - ORDER.indexOf(b.category));

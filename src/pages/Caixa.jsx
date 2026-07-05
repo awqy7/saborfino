@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { formatPrice } from '../lib/format';
 import { 
@@ -20,6 +20,7 @@ const Caixa = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [payingIds, setPayingIds] = useState(new Set());
 
   useEffect(() => {
     fetchOrders();
@@ -57,16 +58,20 @@ const Caixa = () => {
   };
 
   const handlePagar = async (id, method) => {
+    if (payingIds.has(id)) return;
+    setPayingIds(prev => new Set(prev).add(id));
     try {
       const { error } = await supabase
         .from('pedidos')
-        .update({ status: 'pago' }) // Podemos adicionar coluna 'metodo_pagamento' se existir
+        .update({ status: 'pago' })
         .eq('id', id);
 
       if (error) throw error;
     } catch (error) {
       console.error('Erro ao registrar pagamento:', error);
       alert('Erro ao registrar pagamento');
+    } finally {
+      setPayingIds(prev => { const next = new Set(prev); next.delete(id); return next; });
     }
   };
 
@@ -86,13 +91,13 @@ const Caixa = () => {
     const searchMatch = 
       (tx.mesa && tx.mesa.toLowerCase().includes(term)) ||
       (tx.cliente_nome && tx.cliente_nome.toLowerCase().includes(term)) ||
-      tx.id.toLowerCase().includes(term);
+      String(tx.id).toLowerCase().includes(term);
 
     return searchMatch;
   });
 
-  const totalEmAberto = orders.filter(o => o.status !== 'pago' && o.status !== 'cancelado').reduce((acc, o) => acc + Number(o.total), 0);
-  const totalFechados = orders.filter(o => o.status === 'pago').reduce((acc, o) => acc + Number(o.total), 0);
+  const totalEmAberto = orders.filter(o => o.status !== 'pago' && o.status !== 'cancelado').reduce((acc, o) => acc + (Number(o.total) || 0), 0);
+  const totalFechados = orders.filter(o => o.status === 'pago').reduce((acc, o) => acc + (Number(o.total) || 0), 0);
   
   const summaryCards = [
     { label: 'Total Recebido (Hoje)', value: formatPrice(totalFechados), icon: TrendingUp, accent: '#22c55e', iconBg: '#f0fdf4', iconColor: '#16a34a' },
@@ -188,8 +193,8 @@ const Caixa = () => {
         </div>
 
         {/* Table */}
-        <div style={{ overflowX: 'auto', minHeight: '300px' }}>
-          <table className="data-table">
+        <div className="caixa-table-wrap" style={{ overflowX: 'auto', minHeight: '300px' }}>
+          <table className="data-table caixa-table">
             <thead>
               <tr>
                 <th>Horário</th>
@@ -222,31 +227,31 @@ const Caixa = () => {
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.04 }}
                   >
-                    <td>
+                    <td data-label="Horário">
                       <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.85rem' }}>
                         {formatTime(tx.created_at)}
                       </span>
                     </td>
-                    <td>
+                    <td data-label="Origem">
                       <span style={{ display: 'inline-block', padding: '2px 8px', background: 'var(--surface-subtle)', borderRadius: '4px', fontWeight: 700, fontSize: '0.85rem' }}>
                         Mesa {tx.mesa || tx.tipo}
                       </span>
                     </td>
-                    <td style={{ fontWeight: 600, fontSize: '0.875rem' }}>{tx.cliente_nome || '-'}</td>
-                    <td style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    <td data-label="Cliente" style={{ fontWeight: 600, fontSize: '0.875rem' }}>{tx.cliente_nome || '-'}</td>
+                    <td data-label="Itens" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                       {tx.itens?.length || 0} itens
                     </td>
-                    <td>
+                    <td data-label="Status">
                       {getStatusBadge(tx.status)}
                     </td>
-                    <td style={{ textAlign: 'right', fontFamily: 'Sora, sans-serif', fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                    <td data-label="Total" style={{ textAlign: 'right', fontFamily: 'Sora, sans-serif', fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
                       {formatPrice(tx.total)}
                     </td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td data-label="" style={{ textAlign: 'right' }}>
                       {activeTab === 'Em Aberto' ? (
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                          <button onClick={() => handlePagar(tx.id, 'PIX')} className="btn btn-primary btn-sm" title="Receber via PIX" style={{ padding: '0.4rem', background: '#10b981' }}>
-                            <QrCode size={14} /> Pagar
+                          <button onClick={() => handlePagar(tx.id, 'PIX')} disabled={payingIds.has(tx.id)} className="btn btn-primary btn-sm" title="Receber via PIX" style={{ padding: '0.5rem 0.85rem', background: '#10b981', gap: '0.4rem', opacity: payingIds.has(tx.id) ? 0.6 : 1 }}>
+                            <QrCode size={16} /> {payingIds.has(tx.id) ? '...' : 'Pagar'}
                           </button>
                         </div>
                       ) : (

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const Cozinha = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -44,6 +45,7 @@ const Cozinha = () => {
       setOrders(data || []);
     } catch (error) {
       console.error('Erro ao buscar pedidos:', error);
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -77,8 +79,9 @@ const Cozinha = () => {
 
   // Tempo desde a criação
   const getWaitTime = (isoString) => {
+    if (!isoString) return 0;
     const diff = Math.floor((new Date() - new Date(isoString)) / 60000);
-    return diff; // minutos
+    return Number.isNaN(diff) ? 0 : diff;
   };
 
   return (
@@ -96,6 +99,13 @@ const Cozinha = () => {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>Carregando pedidos...</div>
+      ) : fetchError ? (
+        <div style={{ textAlign: 'center', padding: '5rem', background: 'var(--surface)', borderRadius: 'var(--radius-xl)', border: '1px dashed var(--border)' }}>
+          <AlertCircle size={48} color="var(--danger)" style={{ margin: '0 auto 1rem' }} opacity={0.5} />
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>Erro ao carregar pedidos</h3>
+          <p style={{ color: 'var(--text-muted)' }}>Verifique sua conexão e tente novamente.</p>
+          <button className="btn btn-primary" style={{ marginTop: '1rem' }} onClick={() => { setLoading(true); setFetchError(false); fetchOrders(); }}>Tentar Novamente</button>
+        </div>
       ) : orders.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '5rem', background: 'var(--surface)', borderRadius: 'var(--radius-xl)', border: '1px dashed var(--border)' }}>
           <Check size={48} color="var(--text-muted)" style={{ margin: '0 auto 1rem' }} opacity={0.5} />
@@ -103,7 +113,7 @@ const Cozinha = () => {
           <p style={{ color: 'var(--text-muted)' }}>A cozinha está tranquila no momento.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+        <div className="cozinha-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
           <AnimatePresence>
             {orders.map(order => {
               const isPreparando = order.status === 'preparando';
@@ -167,7 +177,7 @@ const Cozinha = () => {
                       <button 
                         onClick={() => updateStatus(order.id, 'preparando')}
                         className="btn" 
-                        style={{ background: '#e0e7ff', color: '#4338ca', width: '100%', fontWeight: 700 }}
+                        style={{ background: '#e0e7ff', color: '#4338ca', width: '100%', fontWeight: 700, padding: '0.75rem', fontSize: '0.9rem' }}
                       >
                         Iniciar Preparo
                       </button>
@@ -175,9 +185,9 @@ const Cozinha = () => {
                       <button 
                         onClick={() => updateStatus(order.id, 'pronto')}
                         className="btn btn-primary" 
-                        style={{ width: '100%', fontWeight: 700, background: '#10b981' }}
+                        style={{ width: '100%', fontWeight: 700, background: '#10b981', padding: '0.75rem', fontSize: '0.9rem' }}
                       >
-                        <Check size={18} /> Marcar como Pronto
+                        <Check size={20} /> Marcar como Pronto
                       </button>
                     )}
                   </div>

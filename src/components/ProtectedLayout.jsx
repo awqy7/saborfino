@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getUserRole, ROLE_DONO, ROLE_ATENDENTE } from '../lib/roles';
 import Sidebar from './Sidebar';
@@ -9,13 +9,32 @@ import Caixa from '../pages/Caixa';
 import Relatorios from '../pages/Relatorios';
 import Settings from '../pages/Settings';
 import Cozinha from '../pages/Cozinha';
+import { ShoppingCart, UtensilsCrossed, LayoutDashboard, Receipt, BarChart3, Settings as SettingsIcon } from 'lucide-react';
 
 const ProtectedLayout = () => {
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [navHidden, setNavHidden] = useState(false);
+  const lastScrollY = useRef(0);
+  const mainRef = useRef(null);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleScroll = useCallback(() => {
+    const main = mainRef.current;
+    if (!main) return;
+    const scrollY = main.scrollTop;
+    if (scrollY < 40) {
+      setNavHidden(false);
+    } else if (scrollY > lastScrollY.current + 10) {
+      setNavHidden(true);
+    } else if (scrollY < lastScrollY.current - 10) {
+      setNavHidden(false);
+    }
+    lastScrollY.current = scrollY;
+  }, []);
 
   useEffect(() => {
     const init = async () => {
@@ -110,11 +129,55 @@ const ProtectedLayout = () => {
     return <Navigate to={`/app${allowedRoutes[0]}`} replace />;
   }
 
+  const getPageName = (path) => {
+    if (path === '/app' || path === '/app/') return 'Dashboard';
+    if (path.startsWith('/app/pos')) return 'Pedidos';
+    if (path.startsWith('/app/cozinha')) return 'Cozinha';
+    if (path.startsWith('/app/caixa')) return 'Caixa';
+    if (path.startsWith('/app/relatorios')) return 'Relatórios';
+    if (path.startsWith('/app/settings')) return 'Configurações';
+    return 'Sistema';
+  };
+
+  const pageName = getPageName(currentPath);
+
+  const allNavItems = [
+    { name: 'Dashboard', path: '/app', icon: LayoutDashboard, roles: [ROLE_DONO] },
+    { name: 'Pedidos', path: '/app/pos', icon: ShoppingCart, roles: [ROLE_DONO, ROLE_ATENDENTE] },
+    { name: 'Cozinha', path: '/app/cozinha', icon: UtensilsCrossed, roles: [ROLE_DONO, ROLE_ATENDENTE] },
+    { name: 'Caixa', path: '/app/caixa', icon: Receipt, roles: [ROLE_DONO] },
+    { name: 'Relatórios', path: '/app/relatorios', icon: BarChart3, roles: [ROLE_DONO] },
+    { name: 'Config.', path: '/app/settings', icon: SettingsIcon, roles: [ROLE_DONO] },
+  ];
+
+  const mobileNavItems = allNavItems.filter(item => item.roles.includes(role)).slice(0, 4);
+
   return (
     <div className="container">
       {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
       <Sidebar role={role} sidebarOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main className="main-content">
+
+      {/* Mobile Bottom Nav with auto-hide on scroll */}
+      <nav className={`mobile-bottom-nav${navHidden ? ' mobile-bottom-nav-hidden' : ''}`}>
+        {mobileNavItems.map(item => {
+          const Icon = item.icon;
+          const active = (item.path === '/app' && (currentPath === '/app' || currentPath === '/app/'))
+            ? true
+            : currentPath.startsWith(item.path) && item.path !== '/app';
+          return (
+            <button
+              key={item.path}
+              className={`mobile-bottom-nav-item${active ? ' active' : ''}`}
+              onClick={() => { navigate(item.path); setSidebarOpen(false); }}
+            >
+              <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
+              <span>{item.name}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      <main className="main-content" ref={mainRef} onScroll={handleScroll}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           {role === ROLE_DONO && (

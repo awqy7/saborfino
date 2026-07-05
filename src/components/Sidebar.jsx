@@ -19,7 +19,11 @@ const Sidebar = ({ role, sidebarOpen, onClose }) => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
     navigate('/');
   };
 

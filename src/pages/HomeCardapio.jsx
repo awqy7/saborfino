@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MENU_DISPLAY } from "../data/cardapio";
+import { formatPrice } from "../lib/format";
 
 const slugify = (str) =>
   str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-");
@@ -125,12 +126,6 @@ function Icon({ name, className = "" }) {
       return null;
   }
 }
-
-function formatPrice(price) {
-  if (!price) return "";
-  return `R$ ${price.toFixed(2).replace('.', ',')}`;
-}
-
 function DishCard({ item }) {
   const [expanded, setExpanded] = useState(false);
   const hasVariants = Array.isArray(item.variants) && item.variants.length > 0;
@@ -163,7 +158,6 @@ function DishCard({ item }) {
           <h3>{item.name}</h3>
           {item.desc && <p>{item.desc}</p>}
           <div className="dish-meta">
-            {formatPrice(item.price) && <strong>{formatPrice(item.price)}</strong>}
             {hasVariants && (
               <span className="dish-variants-badge">
                 {item.variantLabel || `${item.variants.length} opções`}
@@ -185,7 +179,6 @@ function DishCard({ item }) {
                     <b>{variant.label}</b>
                     {variant.desc && <small>{variant.desc}</small>}
                   </span>
-                  {formatPrice(variant.price) && <em>{formatPrice(variant.price)}</em>}
                 </li>
               ))}
             </ul>
@@ -288,10 +281,6 @@ export default function HomeCardapio() {
 
         <div className="hero-inner">
           <div className="hero-copy">
-            <div className="eyebrow">
-              <span>DESDE 2010</span>
-              <i />
-            </div>
             <h1>
               Churrascaria
               <span>Fino Sabor</span>
@@ -393,6 +382,25 @@ export default function HomeCardapio() {
           ))}
         </div>
       </section>
+
+      {/* Footer com login para mobile */}
+      <footer className="fs-footer">
+        <div className="fs-footer-inner">
+          <div className="fs-footer-brand">
+            <Icon name="logo" className="brand-mark" />
+            <span>
+              <b>Fino Sabor</b>
+              <small>CHURRASCARIA</small>
+            </span>
+          </div>
+          <p className="fs-footer-text">Prazer em servi-los, onde a qualidade faz a diferença.</p>
+          <button className="fs-footer-login" onClick={() => navigate("/login")}>
+            <Icon name="login" />
+            Acessar Sistema
+          </button>
+          <p className="fs-footer-copy">© 2026 Fino Sabor · Todos os direitos reservados</p>
+        </div>
+      </footer>
 
       <style>{`
         html,
@@ -1053,13 +1061,13 @@ export default function HomeCardapio() {
           width: 110px;
           height: 110px;
           flex-shrink: 0;
-          border-radius: 10px;
+          border-radius: 16px;
           background-image:
             linear-gradient(180deg, rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.25)),
             radial-gradient(ellipse at 64% 60%, rgba(191, 112, 26, 0.72) 0 18%, transparent 42%),
             radial-gradient(ellipse at 35% 45%, rgba(96, 42, 19, 0.9) 0 16%, transparent 39%),
             linear-gradient(135deg, #1d120d, #59351d 42%, #0a0a0a);
-          background-size: 115%;
+          background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
         }
@@ -1359,7 +1367,7 @@ export default function HomeCardapio() {
           .dish-shot {
             width: 100px;
             height: 100px;
-            border-radius: 9px;
+            border-radius: 14px;
           }
           .dish-copy h3 {
             font-size: 17px;
@@ -1483,6 +1491,7 @@ export default function HomeCardapio() {
           .dish-shot {
             width: 90px;
             height: 90px;
+            border-radius: 12px;
           }
           .dish-copy h3,
           .dish-copy p {
@@ -1546,6 +1555,85 @@ export default function HomeCardapio() {
           .feature:last-child {
             border-bottom: none;
           }
+        }
+
+        /* Footer */
+        .fs-footer {
+          background: #080808;
+          border-top: 1px solid rgba(255,132,14,0.18);
+          padding: 2rem 1.5rem;
+          text-align: center;
+        }
+        .fs-footer-inner {
+          max-width: 400px;
+          margin: 0 auto;
+        }
+        .fs-footer-brand {
+          display: inline-flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 1rem;
+        }
+        .fs-footer-brand .brand-mark {
+          width: 32px;
+          height: 32px;
+          color: var(--orange);
+          stroke-width: 2.65;
+        }
+        .fs-footer-brand b {
+          display: block;
+          font-family: Georgia, "Times New Roman", serif;
+          font-size: 20px;
+          line-height: 19px;
+          color: #f4f0e9;
+        }
+        .fs-footer-brand small {
+          display: block;
+          margin-top: 3px;
+          color: var(--orange);
+          font-size: 7.5px;
+          font-weight: 800;
+          letter-spacing: 3px;
+        }
+        .fs-footer-text {
+          color: #8a8681;
+          font-size: 0.85rem;
+          margin-bottom: 1.25rem;
+          line-height: 1.4;
+        }
+        .fs-footer-login {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          height: 44px;
+          padding: 0 1.5rem;
+          color: var(--orange);
+          border: 1px solid rgba(255,132,14,0.4);
+          border-radius: 10px;
+          background: rgba(255,132,14,0.06);
+          font-size: 0.85rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.15s;
+          margin-bottom: 1.5rem;
+          font-family: inherit;
+        }
+        .fs-footer-login svg {
+          width: 18px;
+          height: 18px;
+        }
+        .fs-footer-login:active {
+          background: rgba(255,132,14,0.12);
+        }
+        .fs-footer-copy {
+          color: #5e5a56;
+          font-size: 0.72rem;
+        }
+        .fs-footer {
+          display: none;
+        }
+        @media (max-width: 760px) {
+          .fs-footer { display: block; }
         }
       `}</style>
     </main>

@@ -18,6 +18,7 @@ const ClientMenu = () => {
   const [orderItems, setOrderItems] = useState([]);
   const [orderTotal, setOrderTotal] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingOrder, setIsLoadingOrder] = useState(false);
 
   const sections = category === 'Todas'
     ? CARDAPIO
@@ -48,7 +49,9 @@ const ClientMenu = () => {
     if (!currentOrderId) return;
 
     const fetchOrder = async () => {
+      setIsLoadingOrder(true);
       const { data } = await supabase.from('pedidos').select('status, itens, total').eq('id', currentOrderId).single();
+      setIsLoadingOrder(false);
       if (data) {
         setOrderStatus(data.status);
         setOrderItems(data.itens || []);
@@ -61,6 +64,7 @@ const ClientMenu = () => {
     const channel = supabase
       .channel(`pedido_${currentOrderId}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pedidos', filter: `id=eq.${currentOrderId}` }, (payload) => {
+        if (!payload.new) return;
         setOrderStatus(payload.new.status);
         setOrderItems(payload.new.itens || []);
         setOrderTotal(payload.new.total || 0);
@@ -370,6 +374,13 @@ const ClientMenu = () => {
 
         {view === 'status' && currentOrderId && (
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+            {isLoadingOrder ? (
+              <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem', marginBottom: '1.5rem' }}>
+                <div style={{ width: 48, height: 48, border: '4px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />
+                <p style={{ color: 'var(--text-secondary)' }}>Carregando comanda...</p>
+              </div>
+            ) : (
+              <>
             <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem', marginBottom: '1.5rem' }}>
               {orderStatus === 'pronto' ? (
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }} style={{ width: 80, height: 80, borderRadius: 'var(--radius-full)', background: 'var(--sage-100)', color: 'var(--sage-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
@@ -430,6 +441,8 @@ const ClientMenu = () => {
                   <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>{formatPrice(orderTotal)}</span>
                 </div>
               </div>
+            )}
+              </>
             )}
           </motion.div>
         )}

@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   Plus, Minus, Search, ShoppingCart,
   Printer, X, CheckCircle, UtensilsCrossed,
   Bike, Hash, MessageSquare, RotateCcw,
   ChevronRight, Trash2, AlertCircle, User,
-  LayoutList, PanelRightOpen
+  ChevronDown
 } from 'lucide-react';
 import CARDAPIO from '../data/cardapio';
 import { formatPrice } from '../lib/format';
@@ -35,12 +35,12 @@ function ProductCard({ product, inCart, onAdd, onRemoveOne }) {
           <>
             <span className="pcard-qty">{inCart.quantity}</span>
             <button className="pcard-btn pcard-btn-minus" onClick={e => { e.stopPropagation(); onRemoveOne(product.id); }}>
-              <Minus size={12} />
+              <Minus size={14} />
             </button>
           </>
         ) : (
           <span className="pcard-btn pcard-btn-add">
-            <Plus size={14} />
+            <Plus size={18} />
           </span>
         )}
       </div>
@@ -62,6 +62,8 @@ const POS = ({ onToggleSidebar }) => {
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [showCart, setShowCart] = useState(true);
   const [cartMobileOpen, setCartMobileOpen] = useState(false);
+  const [showMobileOrderOptions, setShowMobileOrderOptions] = useState(false);
+  const drawerRef = useRef(null);
 
   const mesaNum = mesa.trim();
 
@@ -84,7 +86,8 @@ const POS = ({ onToggleSidebar }) => {
         .not('status', 'eq', 'cancelado')
         .order('created_at', { ascending: false });
       setExistingOrders(data || []);
-    } catch {
+    } catch (err) {
+      console.error('Failed to fetch existing orders:', err);
       setExistingOrders([]);
     }
   };
@@ -119,6 +122,8 @@ const POS = ({ onToggleSidebar }) => {
   const total = cart.reduce((acc, i) => acc + i.price * i.quantity, 0);
   const itemCount = cart.reduce((acc, i) => acc + i.quantity, 0);
   const canFinalize = cart.length > 0 && (orderType !== 'mesa' || mesaNum !== '');
+  const currentOrderType = ORDER_TYPES.find(t => t.id === orderType);
+  const CurrentOrderIcon = currentOrderType?.icon;
 
   const handleSelectOrder = (order) => {
     setSelectedOrderId(order.id);
@@ -318,28 +323,50 @@ const POS = ({ onToggleSidebar }) => {
           <span className="pos-topbar-title">Cardápio</span>
           <span className="pos-topbar-count">{allProducts.length} itens</span>
         </div>
+
+        <div className="pos-topbar-center">
+          <button className="pos-order-type-pill" onClick={() => setShowMobileOrderOptions(v => !v)}>
+            {CurrentOrderIcon && <CurrentOrderIcon size={14} />}
+            <span>{currentOrderType?.label}</span>
+            {orderType === 'mesa' && mesa && <span className="pos-order-type-mesa">M{mesa}</span>}
+            <ChevronDown size={12} />
+          </button>
+          {showMobileOrderOptions && (
+            <div className="pos-order-type-dropdown">
+              {ORDER_TYPES.map(t => {
+                const Icon = t.icon;
+                return (
+                  <button key={t.id} className={`pos-order-type-opt${orderType === t.id ? ' active' : ''}`} onClick={() => { setOrderType(t.id); setShowMobileOrderOptions(false); }}>
+                    <Icon size={16} /> {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         <div className="pos-topbar-right">
           <button className="pos-topbar-cart-btn" onClick={() => setCartMobileOpen(true)}>
-            <ShoppingCart size={16} />
+            <ShoppingCart size={18} />
             {itemCount > 0 && <span className="pos-topbar-badge">{itemCount > 99 ? '99+' : itemCount}</span>}
           </button>
         </div>
       </div>
 
-      <div className="pos-search-wrap">
-        <Search size={16} className="pos-search-icon" />
-        <input className="pos-search-field" type="text" placeholder="Buscar prato, bebida..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-        {searchTerm && <button className="pos-search-clear" onClick={() => setSearchTerm('')}><X size={15} /></button>}
-      </div>
-
-      <div className="pos-cats">
-        {categories.map(cat => (
-          <button key={cat} className={`pos-cat${category === cat ? ' active' : ''}`} onClick={() => setCategory(cat)}>{cat}</button>
-        ))}
-      </div>
-
       <div className="pos-body">
         <div className="pos-body-main">
+          <div className="pos-search-wrap">
+            <Search size={16} className="pos-search-icon" />
+            <input className="pos-search-field" type="text" placeholder="Buscar prato..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            {searchTerm && <button className="pos-search-clear" onClick={() => setSearchTerm('')}><X size={15} /></button>}
+          </div>
+
+          <div className="pos-cats">
+            {categories.map(cat => (
+              <button key={cat} className={`pos-cat${category === cat ? ' active' : ''}`} onClick={() => setCategory(cat)}>{cat}</button>
+            ))}
+          </div>
+
           {renderProducts()}
         </div>
         <div className="pos-body-cart">
@@ -349,22 +376,41 @@ const POS = ({ onToggleSidebar }) => {
 
       {itemCount > 0 && (
         <div className="pos-bar" onClick={() => setCartMobileOpen(true)}>
-          <div className="pos-bar-info">
-            <ShoppingCart size={16} />
-            <span>{itemCount} {itemCount === 1 ? 'item' : 'itens'}</span>
+          <div className="pos-bar-left">
+            <div className="pos-bar-qty">{itemCount}</div>
+            <div className="pos-bar-info">
+              <span className="pos-bar-label">Abrir carrinho</span>
+              <span className="pos-bar-type">
+                {currentOrderType?.label}
+                {orderType === 'mesa' && mesa && ` · Mesa ${mesa}`}
+              </span>
+            </div>
           </div>
           <div className="pos-bar-right">
             <span className="pos-bar-total">{formatPrice(total)}</span>
-            <ChevronRight size={16} />
+            <div className="pos-bar-arrow">
+              <ChevronRight size={18} />
+            </div>
           </div>
         </div>
       )}
 
       {cartMobileOpen && (
-        <div className="pos-overlay" onClick={() => setCartMobileOpen(false)}>
-          <div className="pos-drawer" onClick={e => e.stopPropagation()}>
-            <div className="pos-drawer-handle" onClick={() => setCartMobileOpen(false)}>
-              <div className="pos-drawer-handle-bar" />
+        <div className="pos-overlay pos-overlay-cart" onClick={() => setCartMobileOpen(false)}>
+          <div className="pos-drawer" ref={drawerRef} onClick={e => e.stopPropagation()}>
+            <div className="pos-drawer-header">
+              <div className="pos-drawer-handle" onClick={() => setCartMobileOpen(false)}>
+                <div className="pos-drawer-handle-bar" />
+              </div>
+              <div className="pos-drawer-title-row">
+                <h3 className="pos-drawer-title">
+                  <ShoppingCart size={18} />
+                  Pedido
+                </h3>
+                <button className="pos-drawer-close" onClick={() => setCartMobileOpen(false)}>
+                  <X size={20} />
+                </button>
+              </div>
             </div>
             <div className="pos-drawer-body">
               {renderCart()}

@@ -58,7 +58,7 @@ const Relatorios = () => {
       </div>
 
       {/* Charts row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
+      <div className="reports-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
         {/* Donut */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -145,7 +145,7 @@ const Relatorios = () => {
       </div>
 
       {/* Bottom row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.25rem' }}>
+      <div className="reports-bottom-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.25rem' }}>
         {/* Top products */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}

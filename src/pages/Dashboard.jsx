@@ -95,6 +95,7 @@ const Dashboard = () => {
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
+        className="dash-header"
         style={{ marginBottom: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
       >
         <div>
@@ -105,7 +106,7 @@ const Dashboard = () => {
             Acompanhe as métricas do seu restaurante em tempo real
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div className="dash-header-actions" style={{ display: 'flex', gap: '0.75rem' }}>
           <button className="btn btn-secondary btn-sm">
             <Clock size={14} />
             Hoje
@@ -145,6 +146,7 @@ const Dashboard = () => {
         variants={stagger}
         initial="hidden"
         animate="show"
+        className="dash-main-grid"
         style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '1.25rem' }}
       >
         {/* Recent Orders */}
@@ -160,7 +162,7 @@ const Dashboard = () => {
           </div>
           <div>
             {recentOrders.map((order, i) => {
-              const cfg = statusConfig[order.status];
+              const cfg = statusConfig[order.status] || { cls: 'badge', label: order.status };
               return (
                 <motion.div
                   key={order.id}
