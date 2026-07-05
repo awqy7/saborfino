@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomeCardapio from './pages/HomeCardapio';
 import Login from './pages/Login';
 import ClientMenu from './pages/ClientMenu';
+import PrintMonitor from './pages/PrintMonitor';
 import ProtectedLayout from './components/ProtectedLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -19,6 +20,7 @@ const App = () => {
             <Route path="/order" element={<ClientMenu />} />
             <Route path="/menu/:tableId" element={<ClientMenu />} />
             <Route path="/menu" element={<ClientMenu />} />
+            <Route path="/print-monitor" element={<PrintMonitor />} />
 
             {/* Protected Routes - role-based */}
             <Route path="/app/*" element={<ProtectedLayout />} />
