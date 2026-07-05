@@ -150,7 +150,7 @@ function DishCard({ item }) {
     >
       <div className="dish-main">
         {item.image ? (
-          <div className="dish-shot" style={{ backgroundImage: `url(${item.image})` }} aria-hidden="true" />
+          <div className="dish-shot" style={{ backgroundImage: `url(${item.image})`, backgroundSize: item.bgSize || undefined }} aria-hidden="true" />
         ) : (
           <div className="dish-shot dish-shot-placeholder" aria-hidden="true" />
         )}
