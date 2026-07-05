@@ -1,14 +1,15 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   Plus, Minus, Search, ShoppingCart,
   Printer, X, CheckCircle, UtensilsCrossed,
   Bike, Hash, MessageSquare, RotateCcw,
   ChevronRight, Trash2, AlertCircle, User,
-  ChevronDown
+  ChevronDown, Bluetooth, BluetoothConnected
 } from 'lucide-react';
 import CARDAPIO from '../data/cardapio';
 import { formatPrice } from '../lib/format';
+import { connect, disconnect, printOrder, getStatus, onStatusChange } from '../lib/printer';
 
 const ORDER_TYPES = [
   { id: 'mesa',    label: 'Mesa',     icon: UtensilsCrossed },
@@ -63,7 +64,50 @@ const POS = ({ onToggleSidebar }) => {
   const [showCart, setShowCart] = useState(true);
   const [cartMobileOpen, setCartMobileOpen] = useState(false);
   const [showMobileOrderOptions, setShowMobileOrderOptions] = useState(false);
+  const [printerConnected, setPrinterConnected] = useState(false);
+  const [printerError, setPrinterError] = useState('');
+  const [connectingPrinter, setConnectingPrinter] = useState(false);
   const drawerRef = useRef(null);
+
+  useEffect(() => {
+    setPrinterConnected(getStatus().connected);
+    const unsub = onStatusChange(s => setPrinterConnected(s.connected));
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    const channel = supabase.channel('pos-print-orders')
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'pedidos', filter: 'status=eq.pendente' },
+        async (payload) => {
+          if (getStatus().connected) {
+            try {
+              await printOrder(payload.new);
+            } catch (err) {
+              console.error('Auto-print failed:', err);
+            }
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  const handleConnectPrinter = useCallback(async () => {
+    if (printerConnected) {
+      await disconnect();
+      return;
+    }
+    setConnectingPrinter(true);
+    setPrinterError('');
+    try {
+      await connect();
+    } catch (err) {
+      setPrinterError(err.message || 'Falha ao conectar');
+    } finally {
+      setConnectingPrinter(false);
+    }
+  }, [printerConnected]);
 
   const mesaNum = mesa.trim();
 
@@ -188,9 +232,11 @@ const POS = ({ onToggleSidebar }) => {
           <button className="btn btn-primary" onClick={handleNovoPedido} style={{ width: '100%', justifyContent: 'center', gap: '0.5rem' }}>
             <RotateCcw size={16} /> Novo Pedido
           </button>
-          <button className="btn btn-ghost" onClick={window.print} style={{ width: '100%', justifyContent: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
-            <Printer size={16} /> Imprimir
-          </button>
+          {printerConnected && (
+            <div style={{ textAlign: 'center', marginTop: '0.75rem', fontSize: '0.8rem', color: 'var(--color-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
+              <BluetoothConnected size={12} /> Impresso na térmica
+            </div>
+          )}
         </div>
       </div>
     );
@@ -346,11 +392,31 @@ const POS = ({ onToggleSidebar }) => {
         </div>
 
         <div className="pos-topbar-right">
+          <button
+            className={`pos-printer-btn${printerConnected ? ' connected' : ''}`}
+            onClick={handleConnectPrinter}
+            disabled={connectingPrinter}
+            title={printerConnected ? 'Desconectar impressora' : 'Conectar impressora térmica'}
+          >
+            {connectingPrinter ? (
+              <span style={{ fontSize: '0.7rem' }}>...</span>
+            ) : printerConnected ? (
+              <BluetoothConnected size={16} />
+            ) : (
+              <Bluetooth size={16} />
+            )}
+          </button>
           <button className="pos-topbar-cart-btn" onClick={() => setCartMobileOpen(true)}>
             <ShoppingCart size={18} />
             {itemCount > 0 && <span className="pos-topbar-badge">{itemCount > 99 ? '99+' : itemCount}</span>}
           </button>
         </div>
+        {printerError && (
+          <div className="pos-printer-error">
+            <AlertCircle size={12} /> {printerError}
+            <button onClick={() => setPrinterError('')}><X size={12} /></button>
+          </div>
+        )}
       </div>
 
       <div className="pos-body">
