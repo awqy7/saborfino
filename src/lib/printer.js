@@ -164,11 +164,10 @@ function buildReceipt(order, station) {
     const name = item.quantity != null ? `${item.quantity}x ${item.name}` : item.name;
     buf.push(txt(name + '\n'));
     if (item.desc && item.desc.trim() && item.category !== 'Drinks') {
-      const parts = item.desc.trim()
-        .split(/\s+e\s+/)
-        .flatMap(p => p.split(/,\s*/))
-        .map(s => s.trim())
-        .filter(Boolean);
+      const desc = item.desc.trim();
+      const i = desc.lastIndexOf(' e ');
+      const normalized = i !== -1 ? desc.slice(0, i) + ',' + desc.slice(i + 2) : desc;
+      const parts = normalized.split(',').map(s => s.trim()).filter(Boolean);
       parts.forEach(p => buf.push(txt('  ' + p + '\n')));
     }
   });
