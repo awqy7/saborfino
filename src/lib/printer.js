@@ -1,62 +1,113 @@
-let port = null;
-let listeners = [];
-let printQueue = [];
-let printing = false;
+const FOOD_CATEGORIES = ['Chapas', 'Espetos 500g/1kg', 'Porções', 'Entradas', 'Espetinhos', 'Guarnições', 'Pães de Alho'];
+const DRINK_CATEGORIES = ['Drinks'];
 
-export function getStatus() {
-  return { connected: port !== null };
+const LABELS = {
+  kitchen: { name: 'COZINHA', icon: 'K' },
+  bar: { name: 'BAR', icon: 'B' },
+};
+
+function createStation() {
+  return { port: null, listeners: [], queue: [], printing: false };
 }
 
-export function onStatusChange(cb) {
-  listeners.push(cb);
-  return () => { listeners = listeners.filter(l => l !== cb); };
+const stations = {
+  kitchen: createStation(),
+  bar: createStation(),
+};
+
+function getStationForItem(item) {
+  if (DRINK_CATEGORIES.includes(item?.category)) return 'bar';
+  return 'kitchen';
 }
 
-function notify() {
-  listeners.forEach(l => l(getStatus()));
+function getStatusFor(station) {
+  return { connected: station.port !== null };
 }
 
-export async function connect() {
+function notify(station) {
+  station.listeners.forEach(l => l(getStatusFor(station)));
+}
+
+export function splitOrder(order) {
+  const items = order.itens || [];
+  const kitchen = items.filter(i => getStationForItem(i) === 'kitchen');
+  const bar = items.filter(i => getStationForItem(i) === 'bar');
+  return { kitchen, bar };
+}
+
+export function getStatus(station) {
+  const s = stations[station];
+  if (!s) return { connected: false };
+  return getStatusFor(s);
+}
+
+export function onStatusChange(station, cb) {
+  const s = stations[station];
+  if (!s) return () => {};
+  s.listeners.push(cb);
+  return () => { s.listeners = s.listeners.filter(l => l !== cb); };
+}
+
+export async function connect(station) {
+  const s = stations[station];
+  if (!s) throw new Error(`Estação inválida: ${station}`);
   if (!navigator.serial) throw new Error('Web Serial API não disponível. Use Chrome ou Edge.');
   try {
     const ports = await navigator.serial.getPorts();
     if (ports.length > 0) {
-      port = ports[0];
+      s.port = ports[0];
     } else {
-      port = await navigator.serial.requestPort();
+      s.port = await navigator.serial.requestPort();
     }
-    await port.open({ baudRate: 9600, dataBits: 8, stopBits: 1, parity: 'none' });
-    notify();
+    await s.port.open({ baudRate: 9600, dataBits: 8, stopBits: 1, parity: 'none' });
+    notify(s);
     return true;
   } catch (err) {
-    port = null;
+    s.port = null;
     throw err;
   }
 }
 
-export async function disconnect() {
-  if (port) {
-    try { await port.close(); } catch {}
-    port = null;
-    notify();
+export async function disconnect(station) {
+  const s = stations[station];
+  if (!s) return;
+  if (s.port) {
+    try { await s.port.close(); } catch {}
+    s.port = null;
+    notify(s);
   }
 }
 
-export async function printOrder(order) {
-  if (!port) throw new Error('Impressora não conectada');
+export async function printOrder(order, station) {
+  const s = stations[station];
+  if (!s) throw new Error(`Estação inválida: ${station}`);
+  if (!s.port) throw new Error(`Impressora da ${LABELS[station]?.name || station} não conectada`);
   return new Promise((resolve, reject) => {
-    printQueue.push({ order, resolve, reject });
-    processQueue();
+    s.queue.push({ order, resolve, reject });
+    processQueue(station);
   });
 }
 
-async function processQueue() {
-  if (printing || printQueue.length === 0) return;
-  printing = true;
-  const job = printQueue.shift();
+export async function splitAndPrint(order) {
+  const { kitchen, bar } = splitOrder(order);
+  const promises = [];
+  if (kitchen.length > 0 && stations.kitchen.port) {
+    promises.push(printOrder({ ...order, itens: kitchen }, 'kitchen').catch(() => {}));
+  }
+  if (bar.length > 0 && stations.bar.port) {
+    promises.push(printOrder({ ...order, itens: bar }, 'bar').catch(() => {}));
+  }
+  await Promise.allSettled(promises);
+}
+
+async function processQueue(station) {
+  const s = stations[station];
+  if (s.printing || s.queue.length === 0) return;
+  s.printing = true;
+  const job = s.queue.shift();
   try {
-    const data = buildReceipt(job.order);
-    const writer = port.writable.getWriter();
+    const data = buildReceipt(job.order, station);
+    const writer = s.port.writable.getWriter();
     try {
       await writer.write(data);
     } finally {
@@ -66,8 +117,8 @@ async function processQueue() {
   } catch (err) {
     job.reject(err);
   } finally {
-    printing = false;
-    processQueue();
+    s.printing = false;
+    processQueue(station);
   }
 }
 
@@ -76,12 +127,12 @@ function txt(s) {
   const buf = new Uint8Array(str.length);
   for (let i = 0; i < str.length; i++) {
     const code = str.charCodeAt(i);
-    buf[i] = code <= 255 ? code : 63; // '?' fallback
+    buf[i] = code <= 255 ? code : 63;
   }
   return buf;
 }
 
-function buildReceipt(order) {
+function buildReceipt(order, station) {
   const ESC = 0x1B, GS = 0x1D;
   const C = {
     init: [ESC, 0x40],
@@ -90,18 +141,20 @@ function buildReceipt(order) {
     cut: [GS, 0x56, 0x00],
   };
 
+  const label = LABELS[station]?.name || station.toUpperCase();
   const buf = [];
   const S = '='.repeat(32);
 
   buf.push(C.init);
   buf.push(txt('\n'));
   buf.push(C.center);
+  buf.push(txt(`${label}\n`));
   buf.push(txt('FINO SABOR\n'));
   buf.push(txt('Churrascaria\n'));
   buf.push(txt('\n'));
   buf.push(txt(S + '\n'));
   buf.push(C.left);
-  buf.push(txt(`Pedido: ${order.id || ''}\n`));
+  buf.push(txt(`Pedido: ${(order.id || '').toString().slice(0, 8)}\n`));
   buf.push(txt(`Mesa: ${order.mesa || 'Balcão'}\n`));
   buf.push(txt(`Cliente: ${order.cliente_nome || ''}\n`));
   buf.push(txt(new Date().toLocaleString('pt-BR') + '\n'));
@@ -116,14 +169,8 @@ function buildReceipt(order) {
     }
   });
 
-  if (order.total != null) {
-    buf.push(txt(S + '\n'));
-    buf.push(txt(`Total: R$ ${Number(order.total).toFixed(2).replace('.', ',')}\n`));
-  }
-
   if (order.observacao) {
-    buf.push(txt('\n'));
-    buf.push(txt(`Obs: ${order.observacao}\n`));
+    buf.push(txt('\nObs: ' + order.observacao + '\n'));
   }
 
   buf.push(txt('\n'));

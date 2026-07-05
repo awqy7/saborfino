@@ -13,20 +13,20 @@ const Cozinha = () => {
   const [connectingPrinter, setConnectingPrinter] = useState(false);
 
   useEffect(() => {
-    setPrinterConnected(getStatus().connected);
-    const unsub = onStatusChange(s => setPrinterConnected(s.connected));
+    setPrinterConnected(getStatus('kitchen').connected);
+    const unsub = onStatusChange('kitchen', s => setPrinterConnected(s.connected));
     return unsub;
   }, []);
 
   const handleConnectPrinter = useCallback(async () => {
     if (printerConnected) {
-      await disconnect();
+      await disconnect('kitchen');
       return;
     }
     setConnectingPrinter(true);
     setPrinterError('');
     try {
-      await connect();
+      await connect('kitchen');
     } catch (err) {
       setPrinterError(err.message || 'Falha ao conectar');
     } finally {
@@ -36,7 +36,7 @@ const Cozinha = () => {
 
   const handlePrintOrder = useCallback(async (order) => {
     try {
-      await printOrder(order);
+      await printOrder(order, 'kitchen');
     } catch (err) {
       alert('Erro ao imprimir: ' + (err.message || ''));
     }

@@ -1,24 +1,106 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { connect, disconnect, printOrder, getStatus, onStatusChange } from '../lib/printer';
+import { connect, disconnect, splitAndPrint, getStatus, onStatusChange } from '../lib/printer';
 import { Bluetooth, BluetoothConnected, Printer, CheckCircle, X, AlertCircle, Clock } from 'lucide-react';
 
-const PrintMonitor = () => {
-  const [printerConnected, setPrinterConnected] = useState(false);
+const STATIONS = [
+  { id: 'kitchen', label: 'Cozinha', icon: 'K', color: '#22c55e' },
+  { id: 'bar', label: 'Bar', icon: 'B', color: '#ff8507' },
+];
+
+function StationCard({ station, onLog }) {
+  const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    setConnected(getStatus(station.id).connected);
+    const unsub = onStatusChange(station.id, s => setConnected(s.connected));
+    return unsub;
+  }, [station.id]);
+
+  const handleConnect = useCallback(async () => {
+    if (connected) {
+      await disconnect(station.id);
+      onLog(`${station.label}: Impressora desconectada`, 'warn');
+      return;
+    }
+    setConnecting(true);
+    setError('');
+    try {
+      await connect(station.id);
+      onLog(`${station.label}: Impressora conectada!`, 'success');
+    } catch (err) {
+      setError(err.message || 'Falha ao conectar');
+      onLog(`${station.label}: ${err.message || 'Falha ao conectar'}`, 'error');
+    } finally {
+      setConnecting(false);
+    }
+  }, [connected, station.id, onLog]);
+
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.03)', borderRadius: '12px',
+      border: `1px solid ${connected ? station.color + '40' : 'rgba(255,255,255,0.08)'}`,
+      padding: '1.25rem', flex: 1, minWidth: 220,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: connected ? `${station.color}18` : 'rgba(255,255,255,0.04)',
+          border: `2px solid ${connected ? station.color : 'rgba(255,255,255,0.1)'}`,
+          color: connected ? station.color : '#666',
+          fontWeight: 800, fontSize: '1.1rem',
+        }}>
+          {station.icon}
+        </div>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: '1rem', color: '#f4f0e9' }}>{station.label}</div>
+          <div style={{ fontSize: '0.78rem', color: connected ? station.color : '#666', fontWeight: 600 }}>
+            {connected ? 'Conectado' : 'Desconectado'}
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={handleConnect}
+        disabled={connecting}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+          width: '100%', padding: '0.7rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem',
+          border: `1px solid ${connected ? station.color + '50' : 'rgba(255,255,255,0.15)'}`,
+          background: connected ? `${station.color}12` : 'rgba(255,255,255,0.04)',
+          color: connected ? station.color : '#bbb',
+          transition: 'all 0.15s',
+        }}
+      >
+        {connecting ? 'Conectando...' : connected ? (
+          <><BluetoothConnected size={16} /> Desconectar</>
+        ) : (
+          <><Bluetooth size={16} /> Conectar</>
+        )}
+      </button>
+
+      {error && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.5rem',
+          padding: '0.4rem 0.6rem', fontSize: '0.72rem', color: '#ef4444',
+          background: 'rgba(239,68,68,0.08)', borderRadius: '6px',
+        }}>
+          <AlertCircle size={10} /> {error}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const PrintMonitor = () => {
   const [logs, setLogs] = useState([]);
   const logEndRef = useRef(null);
 
-  const addLog = (msg, type = 'info') => {
-    const entry = { msg, type, time: new Date().toLocaleTimeString('pt-BR') };
-    setLogs(prev => [...prev.slice(-50), entry]);
-  };
-
-  useEffect(() => {
-    setPrinterConnected(getStatus().connected);
-    const unsub = onStatusChange(s => setPrinterConnected(s.connected));
-    return unsub;
+  const addLog = useCallback((msg, type = 'info') => {
+    setLogs(prev => [...prev.slice(-50), { msg, type, time: new Date().toLocaleTimeString('pt-BR') }]);
   }, []);
 
   useEffect(() => {
@@ -32,15 +114,11 @@ const PrintMonitor = () => {
         async (payload) => {
           const order = payload.new;
           addLog(`Pedido detectado: Mesa ${order.mesa || 'Balcão'} — ${order.cliente_nome || '?'}`, 'info');
-          if (getStatus().connected) {
-            try {
-              await printOrder(order);
-              addLog(`Impresso com sucesso!`, 'success');
-            } catch (err) {
-              addLog(`Erro ao imprimir: ${err.message}`, 'error');
-            }
-          } else {
-            addLog(`Impressora desconectada — pedido na fila`, 'warn');
+          try {
+            await splitAndPrint(order);
+            addLog(`Impresso com sucesso!`, 'success');
+          } catch (err) {
+            addLog(`Erro ao imprimir: ${err.message}`, 'error');
           }
         }
       )
@@ -48,26 +126,7 @@ const PrintMonitor = () => {
 
     addLog('Monitor iniciado. Aguardando pedidos...', 'info');
     return () => { supabase.removeChannel(channel); };
-  }, []);
-
-  const handleConnect = useCallback(async () => {
-    if (printerConnected) {
-      await disconnect();
-      addLog('Impressora desconectada', 'warn');
-      return;
-    }
-    setConnecting(true);
-    setError('');
-    try {
-      await connect();
-      addLog('Impressora conectada com sucesso!', 'success');
-    } catch (err) {
-      setError(err.message || 'Falha ao conectar');
-      addLog(`Erro: ${err.message || 'Falha ao conectar'}`, 'error');
-    } finally {
-      setConnecting(false);
-    }
-  }, [printerConnected]);
+  }, [addLog]);
 
   const logColor = (type) => {
     switch (type) {
@@ -81,62 +140,26 @@ const PrintMonitor = () => {
   return (
     <div style={{
       minHeight: '100dvh', background: '#090909', color: '#f4f0e9',
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
       fontFamily: 'system-ui, -apple-system, sans-serif',
     }}>
-      <div style={{ maxWidth: 480, width: '100%', padding: '2rem 1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ maxWidth: 600, margin: '0 auto', padding: '2rem 1.25rem' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{
-            width: 80, height: 80, margin: '0 auto 1rem', borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: printerConnected ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
-            border: `2px solid ${printerConnected ? '#22c55e' : 'rgba(255,255,255,0.1)'}`,
-          }}>
-            {printerConnected ? <BluetoothConnected size={36} color="#22c55e" /> : <Bluetooth size={36} color="#94a3b8" />}
-          </div>
-          <h1 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0 }}>Monitor de Impressão</h1>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <Printer size={24} /> Monitor de Impressão
+          </h1>
           <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '0.3rem' }}>
-            Imprime automaticamente todos os pedidos
+            Imprime automaticamente nas impressoras da Cozinha e do Bar
           </p>
         </div>
 
-        <button
-          onClick={handleConnect}
-          disabled={connecting}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-            width: '100%', padding: '1rem', borderRadius: '12px',
-            border: `2px solid ${printerConnected ? '#22c55e' : 'rgba(255,132,14,0.3)'}`,
-            background: printerConnected ? 'rgba(34,197,94,0.08)' : 'rgba(255,132,14,0.06)',
-            color: printerConnected ? '#22c55e' : '#ff8507',
-            cursor: 'pointer', fontWeight: 700, fontSize: '1rem',
-            transition: 'all 0.15s',
-          }}
-        >
-          {connecting ? (
-            <span>Conectando...</span>
-          ) : printerConnected ? (
-            <><BluetoothConnected size={20} /> Impressora Conectada — Clique para desconectar</>
-          ) : (
-            <><Bluetooth size={20} /> Conectar Impressora Térmica</>
-          )}
-        </button>
-
-        {error && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.75rem',
-            padding: '0.5rem 0.75rem', fontSize: '0.8rem', color: '#ef4444',
-            background: 'rgba(239,68,68,0.08)', borderRadius: '8px',
-            border: '1px solid rgba(239,68,68,0.2)',
-          }}>
-            <AlertCircle size={12} /> {error}
-            <button onClick={() => setError('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 2 }}><X size={12} /></button>
-          </div>
-        )}
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+          {STATIONS.map(s => (
+            <StationCard key={s.id} station={s} onLog={addLog} />
+          ))}
+        </div>
 
         <div style={{
-          flex: 1, marginTop: '1.5rem', borderRadius: '12px',
-          border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden',
+          borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden',
           display: 'flex', flexDirection: 'column',
         }}>
           <div style={{
@@ -147,11 +170,11 @@ const PrintMonitor = () => {
           }}>
             <Clock size={14} /> Últimas Atividades
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem', minHeight: 200 }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem', minHeight: 200, maxHeight: 400 }}>
             {logs.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '2rem', color: '#525252', fontSize: '0.85rem' }}>
                 <Printer size={32} style={{ margin: '0 auto 0.5rem', opacity: 0.3 }} />
-                Nenhuma atividade ainda<br />Conecte a impressora e aguarde pedidos
+                Nenhuma atividade ainda<br />Conecte as impressoras e aguarde pedidos
               </div>
             ) : (
               logs.map((log, i) => (
@@ -167,18 +190,6 @@ const PrintMonitor = () => {
             <div ref={logEndRef} />
           </div>
         </div>
-
-        {printerConnected && (
-          <div style={{
-            marginTop: '1rem', textAlign: 'center', padding: '0.75rem',
-            background: 'rgba(34,197,94,0.06)', borderRadius: '10px',
-            border: '1px solid rgba(34,197,94,0.15)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
-            fontSize: '0.85rem', fontWeight: 600, color: '#22c55e',
-          }}>
-            <CheckCircle size={16} /> Monitorando pedidos em tempo real
-          </div>
-        )}
       </div>
     </div>
   );

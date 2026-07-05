@@ -281,7 +281,7 @@ const ClientMenu = () => {
                       <div
                         key={item.id}
                         className="client-menu-item"
-                        onClick={() => addToCart(item)}
+                        onClick={() => addToCart({ ...item, category: section.category })}
                       >
                         {item.image ? (
                           <div className="client-menu-item-image" style={{ backgroundImage: `url(${item.image})` }} />

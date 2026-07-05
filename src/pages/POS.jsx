@@ -183,7 +183,7 @@ const POS = ({ onToggleSidebar }) => {
         mesa: mesaLabel,
         cliente_nome: clienteNome.trim() || 'Atendente',
         status: 'pendente',
-        itens: cart.map(i => ({ id: i.id, name: i.name, desc: i.desc, price: i.price, quantity: i.quantity })),
+        itens: cart.map(i => ({ id: i.id, name: i.name, desc: i.desc, price: i.price, quantity: i.quantity, category: i.category })),
         total,
         tipo: orderType,
         observacao: obs || null,
