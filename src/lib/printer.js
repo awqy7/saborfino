@@ -1,5 +1,7 @@
 let port = null;
 let listeners = [];
+let printQueue = [];
+let printing = false;
 
 export function getStatus() {
   return { connected: port !== null };
@@ -42,12 +44,30 @@ export async function disconnect() {
 
 export async function printOrder(order) {
   if (!port) throw new Error('Impressora não conectada');
-  const data = buildReceipt(order);
-  const writer = port.writable.getWriter();
+  return new Promise((resolve, reject) => {
+    printQueue.push({ order, resolve, reject });
+    processQueue();
+  });
+}
+
+async function processQueue() {
+  if (printing || printQueue.length === 0) return;
+  printing = true;
+  const job = printQueue.shift();
   try {
-    await writer.write(data);
+    const data = buildReceipt(job.order);
+    const writer = port.writable.getWriter();
+    try {
+      await writer.write(data);
+    } finally {
+      writer.releaseLock();
+    }
+    job.resolve();
+  } catch (err) {
+    job.reject(err);
   } finally {
-    writer.releaseLock();
+    printing = false;
+    processQueue();
   }
 }
 
