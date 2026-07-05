@@ -163,13 +163,16 @@ function buildReceipt(order, station) {
   itens.forEach(item => {
     const name = item.quantity != null ? `${item.quantity}x ${item.name}` : item.name;
     buf.push(txt(name + '\n'));
+    if (item.desc && item.desc.trim()) {
+      buf.push(txt('  ' + item.desc.trim() + '\n'));
+    }
   });
 
   if (order.observacao) {
     buf.push(txt('\nObs: ' + order.observacao + '\n'));
   }
 
-  buf.push(txt('\n'));
+  buf.push(txt('\n\n'));
   buf.push(C.center);
   buf.push(txt('Obrigado!\n'));
   buf.push(txt('\n\n'));
