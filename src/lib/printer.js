@@ -124,12 +124,19 @@ async function processQueue(station) {
   }
 }
 
+const ACCENT_MAP = {
+  'ç':'c','Ç':'C','á':'a','Á':'A','à':'a','À':'A','ã':'a','Ã':'A','â':'a','Â':'A',
+  'é':'e','É':'E','ê':'e','Ê':'E','è':'e','È':'E','í':'i','Í':'I','ì':'i','Ì':'I',
+  'ó':'o','Ó':'O','ò':'o','Ò':'O','õ':'o','Õ':'O','ô':'o','Ô':'O','ú':'u','Ú':'U',
+  'ù':'u','Ù':'U','û':'u','Û':'U','ü':'u','Ü':'U','ñ':'n','Ñ':'N',
+};
+
 function txt(s) {
-  const str = s + '';
+  const str = (s + '').replace(/[çÇáàãâéêèíìóòõôúùûüñÁÀÃÂÉÊÈÍÌÓÒÕÔÚÙÛÜÑ]/g, ch => ACCENT_MAP[ch] || ch);
   const buf = new Uint8Array(str.length);
   for (let i = 0; i < str.length; i++) {
     const code = str.charCodeAt(i);
-    buf[i] = code <= 255 ? code : 63;
+    buf[i] = code < 256 ? code : 63;
   }
   return buf;
 }
