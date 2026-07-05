@@ -145,30 +145,24 @@ function buildReceipt(order, station) {
 
   const label = LABELS[station]?.name || station.toUpperCase();
   const buf = [];
-  const S = '='.repeat(32);
+  const S = '-'.repeat(32);
 
   buf.push(C.init);
   buf.push(txt('\n'));
   buf.push(C.center);
   buf.push(txt(`${label}\n`));
   buf.push(txt('FINO SABOR\n'));
-  buf.push(txt('Churrascaria\n'));
   buf.push(txt('\n'));
-  buf.push(txt(S + '\n'));
   buf.push(C.left);
-  buf.push(txt(`Pedido: ${(order.id || '').toString().slice(0, 8)}\n`));
-  buf.push(txt(`Mesa: ${order.mesa || 'Balcão'}\n`));
+  buf.push(txt(`Pedido: ${(order.id || '').toString().slice(0, 8)}    Mesa: ${order.mesa || 'Balcão'}\n`));
   buf.push(txt(`Cliente: ${order.cliente_nome || ''}\n`));
   buf.push(txt(new Date().toLocaleString('pt-BR') + '\n'));
   buf.push(txt(S + '\n'));
 
   const itens = order.itens || [];
   itens.forEach(item => {
-    const line = item.quantity != null ? `${item.quantity}x ${item.name}` : item.name;
-    buf.push(txt(line + '\n'));
-    if (item.desc && item.desc.trim()) {
-      buf.push(txt('  ' + item.desc + '\n'));
-    }
+    const name = item.quantity != null ? `${item.quantity}x ${item.name}` : item.name;
+    buf.push(txt(name + '\n'));
   });
 
   if (order.observacao) {
