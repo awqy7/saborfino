@@ -52,9 +52,16 @@ export async function connect(station) {
   const s = stations[station];
   if (!s) throw new Error(`Estação inválida: ${station}`);
   if (!navigator.serial) throw new Error('Web Serial API não disponível. Use Chrome ou Edge.');
+  if (s.port) throw new Error(`Impressora da ${LABELS[station]?.name || station} já está conectada`);
   try {
-    s.port = await navigator.serial.requestPort();
-    await s.port.open({ baudRate: 9600, dataBits: 8, stopBits: 1, parity: 'none' });
+    const selected = await navigator.serial.requestPort();
+    for (const [key, st] of Object.entries(stations)) {
+      if (key !== station && st.port && st.port === selected) {
+        throw new Error(`Esta porta já está em uso pela estação ${LABELS[key]?.name || key}. Desconecte-a primeiro.`);
+      }
+    }
+    await selected.open({ baudRate: 9600, dataBits: 8, stopBits: 1, parity: 'none' });
+    s.port = selected;
     notify(s);
     return true;
   } catch (err) {
