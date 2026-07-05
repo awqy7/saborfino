@@ -148,12 +148,6 @@ const ClientMenu = () => {
       }
     }
 
-    const confirmCode = prompt('Para confirmar, digite CONFIRMAR:');
-    if (confirmCode !== 'CONFIRMAR') {
-      alert('Pedido cancelado.');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       if (currentOrderId) {
