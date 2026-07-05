@@ -122,6 +122,7 @@ function Icon({ name, className = "" }) {
           <path d="M12 20.1s-7.6-4.3-7.6-10A4.2 4.2 0 0 1 12 7.5a4.2 4.2 0 0 1 7.6 2.6c0 5.7-7.6 10-7.6 10Z" />
         </svg>
       );
+
     default:
       return null;
   }
