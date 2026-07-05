@@ -46,11 +46,11 @@ export const IMAGES = {
   dishEspetoBoi: '/images/dishes/espeto-boi.jpg',
   dishEspetoPorco: '/images/dishes/espeto-porco.jpg',
   dishEspetoLinguica: '/images/dishes/espeto-linguica.jpg',
-  dishEspetoCoracao: '/images/dishes/espeto-coracao.jpg',
+  dishEspetoCoracao: '/images/dishes/espeto-coracao.webp',
   dishEspetoFrango: '/images/dishes/espeto-frango.jpg',
-  dishEspetoMedalhaoBoi: '/images/dishes/espeto-medalhao-boi.jpg',
-  dishEspetoAsa: '/images/dishes/espeto-asa.jpg',
-  dishEspetoPicanha: '/images/dishes/espeto-picanha.jpg',
+  dishEspetoMedalhaoBoi: '/images/dishes/espeto-medalhao-boi.webp',
+  dishEspetoAsa: '/images/dishes/espeto-asa.webp',
+  dishEspetoPicanha: '/images/dishes/espeto-picanha.webp',
   dishEspetoKafta: '/images/dishes/espeto-kafta.webp',
   dishFritas: '/images/dishes/fritas2.jpg',
   dishFritasPuras: '/images/dishes/fritas-puras.jpg',
@@ -139,7 +139,7 @@ const sections = [
     ],
   },
   {
-    category: 'Espetos',
+    category: 'Espetinhos',
     image: IMAGES.bannerEspetos,
     items: [
       { id: 25, name: 'Boi', desc: 'Espeto de carne bovina grelhada na brasa', price: 0, image: IMAGES.dishEspetoBoi },
@@ -353,5 +353,5 @@ export const MENU_DISPLAY = [
 ];
 
 // Reordena para manter a mesma ordem original das categorias
-const ORDER = ['Chapas', 'Espetos 500g/1kg', 'Porções', 'Entradas', 'Espetos', 'Guarnições', 'Pães de Alho'];
+const ORDER = ['Chapas', 'Espetos 500g/1kg', 'Porções', 'Entradas', 'Espetinhos', 'Guarnições', 'Pães de Alho'];
 MENU_DISPLAY.sort((a, b) => ORDER.indexOf(a.category) - ORDER.indexOf(b.category));
