@@ -72,7 +72,13 @@ async function processQueue() {
 }
 
 function txt(s) {
-  return new TextEncoder().encode(s + '');
+  const str = s + '';
+  const buf = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    buf[i] = code <= 255 ? code : 63; // '?' fallback
+  }
+  return buf;
 }
 
 function buildReceipt(order) {
@@ -105,6 +111,9 @@ function buildReceipt(order) {
   itens.forEach(item => {
     const line = item.quantity != null ? `${item.quantity}x ${item.name}` : item.name;
     buf.push(txt(line + '\n'));
+    if (item.desc && item.desc.trim()) {
+      buf.push(txt('  ' + item.desc + '\n'));
+    }
   });
 
   if (order.total != null) {
