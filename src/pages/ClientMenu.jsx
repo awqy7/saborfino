@@ -122,6 +122,17 @@ const ClientMenu = () => {
       return;
     }
 
+    const { data: recentOrders, error: countErr } = await supabase
+      .from('pedidos')
+      .select('id, created_at')
+      .eq('mesa', tableId)
+      .gte('created_at', new Date(now - 3600000).toISOString());
+
+    if (!countErr && recentOrders && recentOrders.length >= 5) {
+      alert(`Mesa ${tableId} ja fez muitos pedidos na ultima hora (${recentOrders.length}). Aguarde ou chame um garcom.`);
+      return;
+    }
+
     const { data: tableOrders } = await supabase
       .from('pedidos')
       .select('id, cliente_nome')
@@ -135,6 +146,12 @@ const ClientMenu = () => {
           return;
         }
       }
+    }
+
+    const confirmCode = prompt('Para confirmar, digite CONFIRMAR:');
+    if (confirmCode !== 'CONFIRMAR') {
+      alert('Pedido cancelado.');
+      return;
     }
 
     setIsSubmitting(true);
