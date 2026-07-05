@@ -120,9 +120,6 @@ const sections = [
       { id: 51, name: 'Fritas com Queijo 400g', desc: '400g de batata frita coberta com queijo derretido', price: 0, image: IMAGES.dishFritasQueijo },
       { id: 52, name: 'Fritas com Bacon 400g', desc: '400g de batata frita com bacon crocante', price: 0, image: IMAGES.dishFritasBacon },
       { id: 53, name: 'Fritas com Queijo e Bacon 400g', desc: '400g de batata frita com queijo e bacon', price: 0, image: IMAGES.dishFritasQueijoBacon },
-      { id: 54, name: 'Mandioca na Manteiga de Garrafa 400g', desc: 'Cozida ou frita', price: 0, image: IMAGES.dishMandiocaManteiga },
-      { id: 72, name: 'Linguiça Artesanal', desc: '500g de linguiça acompanha batata frita ou mandioca na manteiga, molho, limao e farofa', price: 0, image: IMAGES.dishLinguicaArtesanal },
-      { id: 73, name: 'Torresmo com Mandioca na Manteiga', desc: 'Torresmo crocante com mandioca cozida na manteiga de garrafa', price: 0, image: IMAGES.dishTorresmoManteiga },
     ],
   },
   {
