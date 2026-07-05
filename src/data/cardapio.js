@@ -111,8 +111,7 @@ const sections = [
     image: IMAGES.bannerPorcoes,
     items: [
       { id: 44, name: 'Contra Filé 400g', desc: 'Com fritas ou mandioca 400g', price: 0, image: IMAGES.dishContraFilePorcao },
-      { id: 45, name: 'Linguiça 200g', desc: 'Com fritas ou mandioca 200g', price: 0, image: IMAGES.dishLinguicaPorcao },
-      { id: 46, name: 'Lombo 200g', desc: 'Com fritas ou mandioca 200g', price: 0, image: IMAGES.dishLomboPorcao },
+      { id: 45, name: 'Linguiça', desc: '400g de linguiça 200g de mandioca cozida na manteiga e batata', price: 0, image: IMAGES.dishLinguicaPorcao },
       { id: 47, name: 'Isca de Tilápia 400g', desc: 'Com fritas 400g', price: 0, image: IMAGES.dishTilapiaFrita },
       { id: 48, name: 'Torresmo de Rolo', desc: 'Torresmo de rolo crocante com geleia de pimenta artesanal', price: 0, image: IMAGES.dishTorresmoRolo },
       { id: 69, name: 'Torresmo com Mandioca', desc: 'Torresmo pururuca crocante com mandioca cozida na manteiga', price: 0, image: IMAGES.dishTorresmoNovo },
