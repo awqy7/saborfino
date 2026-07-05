@@ -32,6 +32,7 @@ const ClientMenu = () => {
 
   // Session Persistence
   useEffect(() => {
+    if (!tableId) return;
     const savedSession = localStorage.getItem(`fino_sabor_table_${tableId}`);
     if (savedSession) {
       try {
