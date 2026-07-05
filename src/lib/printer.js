@@ -164,7 +164,12 @@ function buildReceipt(order, station) {
     const name = item.quantity != null ? `${item.quantity}x ${item.name}` : item.name;
     buf.push(txt(name + '\n'));
     if (item.desc && item.desc.trim()) {
-      buf.push(txt('  ' + item.desc.trim() + '\n'));
+      const parts = item.desc.trim()
+        .split(/\s+e\s+/)
+        .flatMap(p => p.split(/,\s*/))
+        .map(s => s.trim())
+        .filter(Boolean);
+      parts.forEach(p => buf.push(txt('  ' + p + '\n')));
     }
   });
 
