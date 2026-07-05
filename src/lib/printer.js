@@ -53,12 +53,7 @@ export async function connect(station) {
   if (!s) throw new Error(`Estação inválida: ${station}`);
   if (!navigator.serial) throw new Error('Web Serial API não disponível. Use Chrome ou Edge.');
   try {
-    const ports = await navigator.serial.getPorts();
-    if (ports.length > 0) {
-      s.port = ports[0];
-    } else {
-      s.port = await navigator.serial.requestPort();
-    }
+    s.port = await navigator.serial.requestPort();
     await s.port.open({ baudRate: 9600, dataBits: 8, stopBits: 1, parity: 'none' });
     notify(s);
     return true;
