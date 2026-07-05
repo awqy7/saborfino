@@ -7,7 +7,9 @@ import CARDAPIO from '../data/cardapio';
 import { formatPrice } from '../lib/format';
 
 const ClientMenu = () => {
-  const { tableId } = useParams();
+  const { tableId: urlTable } = useParams();
+  const [tableId, setTableId] = useState(urlTable || '');
+  const [showTableInput, setShowTableInput] = useState(!urlTable);
   const [cart, setCart] = useState([]);
   const [clientName, setClientName] = useState('');
   const [isNameSet, setIsNameSet] = useState(false);
@@ -19,6 +21,10 @@ const ClientMenu = () => {
   const [orderTotal, setOrderTotal] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingOrder, setIsLoadingOrder] = useState(false);
+  const [lastSubmitTime, setLastSubmitTime] = useState(() => {
+    const saved = localStorage.getItem('fino_last_order_time');
+    return saved ? Number(saved) : 0;
+  });
 
   const sections = category === 'Todas'
     ? CARDAPIO
@@ -108,40 +114,61 @@ const ClientMenu = () => {
 
   const handlePlaceOrder = async () => {
     if (!clientName.trim() || cart.length === 0) return;
-    
+
+    const now = Date.now();
+    if (now - lastSubmitTime < 30000) {
+      alert('Aguarde 30 segundos entre os pedidos.');
+      return;
+    }
+
+    const { data: tableOrders } = await supabase
+      .from('pedidos')
+      .select('id, cliente_nome')
+      .eq('mesa', tableId)
+      .in('status', ['pendente', 'preparando']);
+
+    if (tableOrders && tableOrders.length > 0 && !currentOrderId) {
+      const other = tableOrders.find(o => o.cliente_nome !== clientName.trim());
+      if (other) {
+        if (!confirm(`Ja existe um pedido pendente na Mesa ${tableId} em nome de "${other.cliente_nome}". Deseja continuar?`)) {
+          return;
+        }
+      }
+    }
+
     setIsSubmitting(true);
     try {
-      // Se a pessoa já tem um pedido aberto nesta mesa, vamos ADICIONAR os itens
       if (currentOrderId) {
         const { data: existingOrder } = await supabase
           .from('pedidos')
           .select('itens, total, status')
           .eq('id', currentOrderId)
           .single();
-          
+
         if (existingOrder && existingOrder.status !== 'pago' && existingOrder.status !== 'cancelado') {
           const newItens = [...existingOrder.itens, ...cart];
           const newTotal = Number(existingOrder.total) + total;
-          
+
           await supabase.from('pedidos').update({
             itens: newItens,
             total: newTotal,
-            status: 'pendente' // Retorna pra fila da cozinha com os novos itens
+            status: 'pendente'
           }).eq('id', currentOrderId);
-          
+
           setOrderItems(newItens);
           setOrderTotal(newTotal);
           setOrderStatus('pendente');
           setView('status');
           setCart([]);
+          localStorage.setItem('fino_last_order_time', String(now));
+          setLastSubmitTime(now);
           setIsSubmitting(false);
           return;
         }
       }
 
-      // Caso contrário, cria um novo pedido
       const orderData = {
-        mesa: tableId || 'Balcão',
+        mesa: tableId,
         cliente_nome: clientName,
         status: 'pendente',
         itens: cart,
@@ -150,22 +177,23 @@ const ClientMenu = () => {
       };
 
       const { data, error } = await supabase.from('pedidos').insert([orderData]).select().single();
-      
+
       if (error) throw error;
-      
+
       setCurrentOrderId(data.id);
       setOrderItems(cart);
       setOrderTotal(total);
       setOrderStatus('pendente');
       setView('status');
       setCart([]);
-      
-      // Salva na sessão
+
       localStorage.setItem(`fino_sabor_table_${tableId}`, JSON.stringify({
         clientName: clientName.trim(),
         currentOrderId: data.id
       }));
-      
+      localStorage.setItem('fino_last_order_time', String(now));
+      setLastSubmitTime(now);
+
     } catch (err) {
       console.error("Erro ao fazer pedido:", err);
       alert("Houve um erro ao enviar seu pedido. Chame um garçom.");
@@ -188,6 +216,46 @@ const ClientMenu = () => {
     }
   };
 
+  // Table input screen (shown when no tableId in URL)
+  if (showTableInput) {
+    return (
+      <div className="client-hero welcome-hero">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          className="card"
+          style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '3rem 2rem', background: 'rgba(9,9,9,0.9)', border: '1px solid rgba(255,132,14,0.32)', color: '#f4f0e9', boxShadow: '0 24px 70px rgba(0,0,0,0.5)' }}
+        >
+          <div style={{ width: 64, height: 64, background: 'rgba(255,132,14,0.14)', border: '1px solid rgba(255,132,14,0.42)', borderRadius: 'var(--radius-full)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: '#ff8507' }}>
+            <Utensils size={32} />
+          </div>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#f8f4ef', marginBottom: '0.5rem' }}>Qual sua mesa?</h1>
+          <p style={{ color: '#cfc8c1', marginBottom: '2rem', fontSize: '0.95rem' }}>
+            Informe o número da mesa para fazer seu pedido
+          </p>
+          <div className="input-wrap" style={{ marginBottom: '1.5rem' }}>
+            <div className="input-icon"><Utensils size={18} /></div>
+            <input 
+              type="number" min="1"
+              className="form-input has-icon"
+              placeholder="Nº da mesa" 
+              value={tableId} 
+              onChange={e => setTableId(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && tableId.trim() && setShowTableInput(false)}
+            />
+          </div>
+          <button 
+            className="btn btn-primary"
+            onClick={() => { if (tableId.trim()) setShowTableInput(false); }}
+            disabled={!tableId.trim()}
+            style={{ width: '100%', padding: '1rem', fontSize: '1rem', borderRadius: 'var(--radius-md)' }}
+          >
+            Entrar
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
   // Welcome Screen to get Name
   if (!isNameSet) {
     return (
@@ -202,7 +270,7 @@ const ClientMenu = () => {
           </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#f8f4ef', marginBottom: '0.5rem' }}>Bem-vindo!</h1>
           <p style={{ color: '#cfc8c1', marginBottom: '2rem', fontSize: '0.95rem' }}>
-            Mesa <strong>{tableId || 'Balcão'}</strong><br/>
+            Mesa <strong>{tableId}</strong><br/>
             Como podemos te chamar?
           </p>
           <div className="input-wrap" style={{ marginBottom: '1.5rem' }}>
@@ -236,7 +304,7 @@ const ClientMenu = () => {
         <div className="client-menu-header-content">
           <div className="client-menu-header-info">
             <h1 className="client-menu-header-title">Olá, {clientName}!</h1>
-            <p className="client-menu-header-subtitle">Mesa {tableId || 'Balcão'}</p>
+            <p className="client-menu-header-subtitle">Mesa {tableId}</p>
           </div>
           {currentOrderId && (
             <button 
