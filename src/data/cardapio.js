@@ -52,6 +52,7 @@ export const IMAGES = {
   dishEspetoAsa: '/images/dishes/espeto-asa.webp',
   dishEspetoPicanha: '/images/dishes/espeto-picanha.webp',
   dishEspetoKafta: '/images/dishes/espeto-kafta.webp',
+  dishCoalho: '/images/dishes/coalho.webp',
   dishFritas: '/images/dishes/fritas2.jpg',
   dishFritasPuras: '/images/dishes/frita.jpg',
   dishFritasQueijo: '/images/dishes/frita2.jpg',
@@ -170,6 +171,7 @@ const sections = [
       { id: 32, name: 'Meio da Asa', desc: 'Espeto de meio da asa de frango crocante', price: 0, image: IMAGES.dishEspetoAsa },
       { id: 33, name: 'Picanha Bovina', desc: 'Espeto de picanha bovina grelhada na brasa', price: 0, image: IMAGES.dishEspetoPicanha },
       { id: 34, name: 'Kafta', desc: 'Espeto de kafta artesanal com tempero árabe', price: 0, image: IMAGES.dishEspetoKafta },
+      { id: 40, name: 'Queijo Coalho', desc: 'Espeto de queijo coalho grelhado na brasa', price: 0, image: IMAGES.dishCoalho },
     ],
   },
   {
