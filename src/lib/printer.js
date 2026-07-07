@@ -1,5 +1,5 @@
 const FOOD_CATEGORIES = ['Chapas', 'Espetos 500g/1kg', 'Porções', 'Entradas', 'Espetinhos', 'Guarnições', 'Pães de Alho'];
-const DRINK_CATEGORIES = ['Drinks'];
+const DRINK_CATEGORIES = ['Drinks', 'Bebidas'];
 
 const LABELS = {
   kitchen: { name: 'COZINHA', icon: 'K' },

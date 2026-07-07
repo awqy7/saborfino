@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Plus, Minus, ShoppingCart, CheckCircle, Clock, Utensils, Send, User, Receipt } from 'lucide-react';
+import { Plus, Minus, ShoppingCart, CheckCircle, Clock, Utensils, Send, User, Receipt, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import CARDAPIO from '../data/cardapio';
 import { formatPrice } from '../lib/format';
@@ -25,6 +25,7 @@ const ClientMenu = () => {
     const saved = localStorage.getItem('fino_last_order_time');
     return saved ? Number(saved) : 0;
   });
+  const [variantModal, setVariantModal] = useState(null);
 
   const sections = category === 'Todas'
     ? CARDAPIO
@@ -85,15 +86,26 @@ const ClientMenu = () => {
 
   const addToCart = (product) => {
     setCart(prev => {
-      const existing = prev.find(i => i.id === product.id);
-      if (existing) return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      const existing = prev.find(i => i.cartKey === product.cartKey);
+      if (existing) return prev.map(i => i.cartKey === product.cartKey ? { ...i, quantity: i.quantity + 1 } : i);
       return [...prev, { ...product, quantity: 1 }];
     });
   };
 
-  const updateQuantity = (id, delta) => {
+  const addVariantToCart = (item, variant) => {
+    addToCart({
+      ...item,
+      name: `${item.name} ${variant.label}`,
+      price: variant.price,
+      category: item.category,
+      cartKey: `${item.id}-${variant.label}`,
+    });
+    setVariantModal(null);
+  };
+
+  const updateQuantity = (cartKey, delta) => {
     setCart(prev => prev.map(i => {
-      if (i.id !== id) return i;
+      if (i.cartKey !== cartKey) return i;
       const q = i.quantity + delta;
       return q < 1 ? null : { ...i, quantity: q };
     }).filter(Boolean));
@@ -361,7 +373,13 @@ const ClientMenu = () => {
                       <div
                         key={item.id}
                         className="client-menu-item"
-                        onClick={() => addToCart({ ...item, category: section.category })}
+                        onClick={() => {
+                          if (item.variants?.length > 0) {
+                            setVariantModal({ ...item, category: section.category });
+                          } else {
+                            addToCart({ ...item, category: section.category, cartKey: `${item.id}` });
+                          }
+                        }}
                       >
                         {item.image ? (
                           <div className="client-menu-item-image" style={{ backgroundImage: `url(${item.image})` }} />
@@ -370,15 +388,21 @@ const ClientMenu = () => {
                         )}
                         <div className="client-menu-item-content">
                           <div className="client-menu-item-name">{item.name}</div>
-                          {item.desc && (
+                          {item.price > 0 && (
+                            <p className="client-menu-item-desc" style={{ fontWeight: 800, color: 'var(--primary)', marginTop: '0.15rem' }}>{formatPrice(item.price)}</p>
+                          )}
+                          {item.desc && !item.variants && (
                             <p className="client-menu-item-desc">{item.desc}</p>
+                          )}
+                          {item.variantLabel && (
+                            <p className="client-menu-item-desc" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: '0.25rem' }}>{item.variantLabel}</p>
                           )}
                         </div>
                         <div className="client-menu-item-actions">
                           {inCart && (
                             <button
                               className="client-menu-item-btn-remove"
-                              onClick={(e) => { e.stopPropagation(); updateQuantity(item.id, -1); }}
+                              onClick={(e) => { e.stopPropagation(); updateQuantity(inCart.cartKey, -1); }}
                               type="button"
                             >
                               −
@@ -414,7 +438,7 @@ const ClientMenu = () => {
               <>
                 <div className="card" style={{ padding: '0.5rem 1.5rem', marginBottom: '1.5rem' }}>
                   {cart.map((item, idx) => (
-                    <div key={item.id} style={{ borderBottom: idx < cart.length - 1 ? '1px solid var(--border)' : 'none', padding: '1rem 0' }}>
+                    <div key={item.cartKey || item.id} style={{ borderBottom: idx < cart.length - 1 ? '1px solid var(--border)' : 'none', padding: '1rem 0' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                           <div>
@@ -423,10 +447,10 @@ const ClientMenu = () => {
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button onClick={() => updateQuantity(item.id, -1)} className="btn btn-secondary btn-icon" style={{ width: 32, height: 32 }}>
+                          <button onClick={() => updateQuantity(item.cartKey, -1)} className="btn btn-secondary btn-icon" style={{ width: 32, height: 32 }}>
                             <Minus size={14} />
                           </button>
-                          <button onClick={() => updateQuantity(item.id, 1)} className="btn btn-secondary btn-icon" style={{ width: 32, height: 32 }}>
+                          <button onClick={() => updateQuantity(item.cartKey, 1)} className="btn btn-secondary btn-icon" style={{ width: 32, height: 32 }}>
                             <Plus size={14} />
                           </button>
                         </div>
@@ -545,8 +569,42 @@ const ClientMenu = () => {
             </div>
             <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>{formatPrice(total)}</span>
           </button>
-        </motion.div>
-      )}
+            </motion.div>
+          )}
+
+          {/* Variant Selection Modal */}
+          {variantModal && (
+            <div className="pos-overlay pos-overlay-cart" onClick={() => setVariantModal(null)}>
+              <div className="pos-drawer" onClick={e => e.stopPropagation()}>
+                <div className="pos-drawer-header">
+                  <div className="pos-drawer-handle" onClick={() => setVariantModal(null)}>
+                    <div className="pos-drawer-handle-bar" />
+                  </div>
+                  <div className="pos-drawer-title-row">
+                    <h3 className="pos-drawer-title">{variantModal.name}</h3>
+                    <button className="pos-drawer-close" onClick={() => setVariantModal(null)}>
+                      <X size={20} />
+                    </button>
+                  </div>
+                </div>
+                <div className="pos-drawer-body">
+                  <div style={{ padding: '1rem 0' }}>
+                    {variantModal.variants && variantModal.variants.map((v, idx) => (
+                      <button
+                        key={idx}
+                        className="pos-existing-item"
+                        style={{ width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.9rem 1rem', borderRadius: 'var(--radius-md)', marginBottom: '0.5rem', background: 'var(--bg-surface)', border: '1px solid var(--border)', cursor: 'pointer', fontWeight: 600, color: 'var(--text-primary)' }}
+                        onClick={() => addVariantToCart(variantModal, v)}
+                      >
+                        <span>{v.label}</span>
+                        <span style={{ fontWeight: 800, color: 'var(--primary)' }}>{formatPrice(v.price)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
     </div>
   );
 };

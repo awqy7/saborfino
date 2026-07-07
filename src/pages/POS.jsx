@@ -23,9 +23,16 @@ const allProducts = CARDAPIO.flatMap(section =>
   section.items.map(item => ({ ...item, category: section.category }))
 );
 
-function ProductCard({ product, inCart, onAdd, onRemoveOne }) {
+function ProductCard({ product, inCart, onAdd, onRemoveOne, onSelectVariant }) {
+  const handleClick = () => {
+    if (product.variants?.length > 0) {
+      onSelectVariant(product);
+    } else {
+      onAdd(product);
+    }
+  };
   return (
-    <div className={`pcard${inCart ? ' pcard-incart' : ''}`} onClick={() => onAdd(product)}>
+    <div className={`pcard${inCart ? ' pcard-incart' : ''}`} onClick={handleClick}>
       <div className="pcard-img" style={{ backgroundImage: `url(${product.image})` }} />
       <div className="pcard-body">
         <span className="pcard-name">{product.name}</span>
@@ -64,6 +71,7 @@ const POS = ({ onToggleSidebar }) => {
   const [showCart, setShowCart] = useState(true);
   const [cartMobileOpen, setCartMobileOpen] = useState(false);
   const [showMobileOrderOptions, setShowMobileOrderOptions] = useState(false);
+  const [variantModal, setVariantModal] = useState(null);
   const drawerRef = useRef(null);
 
   const mesaNum = mesa.trim();
@@ -110,15 +118,26 @@ const POS = ({ onToggleSidebar }) => {
 
   const addToCart = (product) => {
     setCart(prev => {
-      const found = prev.find(i => i.id === product.id);
-      if (found) return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      const existing = prev.find(i => i.cartKey === product.cartKey);
+      if (existing) return prev.map(i => i.cartKey === product.cartKey ? { ...i, quantity: i.quantity + 1 } : i);
       return [...prev, { ...product, quantity: 1 }];
     });
   };
 
-  const removeOne = (id) => setCart(prev => prev.map(i => i.id === id ? (i.quantity > 1 ? { ...i, quantity: i.quantity - 1 } : null) : i).filter(Boolean));
-  const removeFromCart = (id) => setCart(prev => prev.filter(i => i.id !== id));
-  const updateQuantity = (id, delta) => setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i).filter(i => i.quantity > 0));
+  const addVariantToCart = (item, variant) => {
+    addToCart({
+      ...item,
+      name: `${item.name} ${variant.label}`,
+      price: variant.price,
+      category: item.category,
+      cartKey: `${item.id}-${variant.label}`,
+    });
+    setVariantModal(null);
+  };
+
+  const removeOne = (cartKey) => setCart(prev => prev.map(i => i.cartKey === cartKey ? (i.quantity > 1 ? { ...i, quantity: i.quantity - 1 } : null) : i).filter(Boolean));
+  const removeFromCart = (cartKey) => setCart(prev => prev.filter(i => i.cartKey !== cartKey));
+  const updateQuantity = (cartKey, delta) => setCart(prev => prev.map(i => i.cartKey === cartKey ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i).filter(i => i.quantity > 0));
 
   const total = cart.reduce((acc, i) => acc + i.price * i.quantity, 0);
   const itemCount = cart.reduce((acc, i) => acc + i.quantity, 0);
@@ -140,7 +159,7 @@ const POS = ({ onToggleSidebar }) => {
         mesa: mesaLabel,
         cliente_nome: clienteNome.trim() || 'Atendente',
         status: 'pendente',
-        itens: cart.map(i => ({ id: i.id, name: i.name, desc: i.desc, price: i.price, quantity: i.quantity, category: i.category })),
+        itens: cart.map(i => ({ id: i.id, name: i.name, desc: i.desc, price: i.price, quantity: i.quantity, category: i.category, cartKey: i.cartKey })),
         total,
         tipo: orderType,
         observacao: obs || null,
@@ -202,7 +221,7 @@ const POS = ({ onToggleSidebar }) => {
             <div className="pos-cat-head"><span>{section.category}</span></div>
             <div className="pcard-grid">
               {section.items.map(product => (
-                <ProductCard key={product.id} product={product} inCart={cart.find(i => i.id === product.id)} onAdd={addToCart} onRemoveOne={removeOne} />
+                <ProductCard key={product.id} product={product} inCart={cart.find(i => i.cartKey === product.cartKey)} onAdd={addToCart} onRemoveOne={removeOne} onSelectVariant={(p) => setVariantModal(p)} />
               ))}
             </div>
           </div>
@@ -213,7 +232,7 @@ const POS = ({ onToggleSidebar }) => {
             <div className="pos-empty"><AlertCircle size={24} /><p>Nenhum item encontrado</p></div>
           ) : (
             filteredProducts.map(product => (
-              <ProductCard key={product.id} product={product} inCart={cart.find(i => i.id === product.id)} onAdd={addToCart} onRemoveOne={removeOne} />
+              <ProductCard key={product.id} product={product} inCart={cart.find(i => i.cartKey === product.cartKey)} onAdd={addToCart} onRemoveOne={removeOne} onSelectVariant={(p) => setVariantModal(p)} />
             ))
           )}
         </div>
@@ -272,17 +291,17 @@ const POS = ({ onToggleSidebar }) => {
             </div>
           ) : (
             cart.map(item => (
-              <div key={item.id} className="pos-cart-row">
+              <div key={item.cartKey} className="pos-cart-row">
                 <div className="pos-cart-row-info">
                   <div className="pos-cart-row-name">{item.name}</div>
                   <div className="pos-cart-row-sub">{formatPrice(item.price)}</div>
                 </div>
                 <div className="pos-cart-row-qty">
-                  <button className="pos-cart-row-btn" onClick={() => updateQuantity(item.id, -1)}><Minus size={10} /></button>
+                  <button className="pos-cart-row-btn" onClick={() => updateQuantity(item.cartKey, -1)}><Minus size={10} /></button>
                   <span className="pos-cart-row-val">{item.quantity}</span>
-                  <button className="pos-cart-row-btn" onClick={() => updateQuantity(item.id, 1)}><Plus size={10} /></button>
+                  <button className="pos-cart-row-btn" onClick={() => updateQuantity(item.cartKey, 1)}><Plus size={10} /></button>
                 </div>
-                <button className="pos-cart-row-rm" onClick={() => removeFromCart(item.id)}><X size={13} /></button>
+                <button className="pos-cart-row-rm" onClick={() => removeFromCart(item.cartKey)}><X size={13} /></button>
               </div>
             ))
           )}
@@ -412,6 +431,40 @@ const POS = ({ onToggleSidebar }) => {
             </div>
             <div className="pos-drawer-body">
               {renderCart()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Variant Selection Modal */}
+      {variantModal && (
+        <div className="pos-overlay" onClick={() => setVariantModal(null)}>
+          <div className="pos-drawer" style={{ maxWidth: '420px', margin: '0 auto' }} onClick={e => e.stopPropagation()}>
+            <div className="pos-drawer-header">
+              <div className="pos-drawer-handle" onClick={() => setVariantModal(null)}>
+                <div className="pos-drawer-handle-bar" />
+              </div>
+              <div className="pos-drawer-title-row">
+                <h3 className="pos-drawer-title">{variantModal.name}</h3>
+                <button className="pos-drawer-close" onClick={() => setVariantModal(null)}>
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+            <div className="pos-drawer-body">
+              <div style={{ padding: '1rem 0' }}>
+                {variantModal.variants && variantModal.variants.map((v, idx) => (
+                  <button
+                    key={idx}
+                    className="pos-existing-item"
+                    style={{ width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.9rem 1rem', borderRadius: 'var(--radius-md)', marginBottom: '0.5rem', background: 'var(--bg-surface)', border: '1px solid var(--border)', cursor: 'pointer', fontWeight: 600, color: 'var(--text-primary)' }}
+                    onClick={() => addVariantToCart({ ...variantModal, category: variantModal.category || allProducts.find(p => p.id === variantModal.id)?.category }, v)}
+                  >
+                    <span>{v.label}</span>
+                    <span style={{ fontWeight: 800, color: 'var(--primary)' }}>{formatPrice(v.price)}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
