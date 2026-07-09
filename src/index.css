@@ -1043,10 +1043,6 @@ img { max-width: 100%; }
   font-size: 0.7rem;
   color: #bdb5ae;
   line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .client-menu-item-actions {

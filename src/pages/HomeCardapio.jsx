@@ -127,8 +127,8 @@ function Icon({ name, className = "" }) {
       return null;
   }
 }
-function DishCard({ item }) {
-  const [expanded, setExpanded] = useState(false);
+function DishCard({ item, defaultExpanded = false }) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const hasVariants = Array.isArray(item.variants) && item.variants.length > 0;
   const hasGroups = hasVariants && item.variants.some(v => v.group);
 
@@ -261,7 +261,7 @@ function MenuCategory({ section, isFirst = false, onCategoryClick }) {
 
       <div className="dish-grid" style={{ marginTop: 13 }}>
         {section.items.map((item, idx) => (
-          <DishCard item={item} key={item.id} />
+          <DishCard item={item} key={item.id} defaultExpanded={section.category === 'Chapas'} />
         ))}
       </div>
     </div>
