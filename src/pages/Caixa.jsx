@@ -11,9 +11,19 @@ import {
   Filter,
   TrendingUp,
   CheckCircle,
-  Clock
+  Clock,
+  ChevronDown,
+  ChevronUp,
+  X
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+const DATE_FILTERS = [
+  { id: 'hoje', label: 'Hoje' },
+  { id: '7d', label: '7 dias' },
+  { id: '30d', label: '30 dias' },
+  { id: 'tudo', label: 'Tudo' },
+];
 
 const Caixa = () => {
   const [activeTab, setActiveTab] = useState('Em Aberto');
@@ -21,6 +31,8 @@ const Caixa = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [payingIds, setPayingIds] = useState(new Set());
+  const [dateFilter, setDateFilter] = useState('hoje');
+  const [expandedOrder, setExpandedOrder] = useState(null);
 
   useEffect(() => {
     fetchOrders();
@@ -80,12 +92,33 @@ const Caixa = () => {
     return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Filter based on active tab and search
+  const formatDate = (isoString) => {
+    const d = new Date(isoString);
+    return d.toLocaleDateString('pt-BR');
+  };
+
+  const getDateCutoff = () => {
+    if (dateFilter === 'tudo') return null;
+    const now = new Date();
+    const days = dateFilter === 'hoje' ? 0 : dateFilter === '7d' ? 7 : 30;
+    const cutoff = new Date(now);
+    cutoff.setDate(cutoff.getDate() - days);
+    cutoff.setHours(0, 0, 0, 0);
+    return cutoff;
+  };
+
+  // Filter based on active tab, search, and date
   const displayedOrders = orders.filter(tx => {
     const isAberto = activeTab === 'Em Aberto' && tx.status !== 'pago' && tx.status !== 'cancelado';
     const isPago = activeTab === 'Fechados' && tx.status === 'pago';
-    
+
     if (!isAberto && !isPago) return false;
+
+    // Date filter (only for Fechados)
+    if (isPago) {
+      const cutoff = getDateCutoff();
+      if (cutoff && new Date(tx.created_at) < cutoff) return false;
+    }
 
     const term = searchTerm.toLowerCase();
     const searchMatch = 
@@ -97,10 +130,10 @@ const Caixa = () => {
   });
 
   const totalEmAberto = orders.filter(o => o.status !== 'pago' && o.status !== 'cancelado').reduce((acc, o) => acc + (Number(o.total) || 0), 0);
-  const totalFechados = orders.filter(o => o.status === 'pago').reduce((acc, o) => acc + (Number(o.total) || 0), 0);
+  const totalFechadosPeriodo = displayedOrders.filter(o => o.status === 'pago').reduce((acc, o) => acc + (Number(o.total) || 0), 0);
   
   const summaryCards = [
-    { label: 'Total Recebido (Hoje)', value: formatPrice(totalFechados), icon: TrendingUp, accent: '#22c55e', iconBg: '#f0fdf4', iconColor: '#16a34a' },
+    { label: 'Total Recebido', value: formatPrice(totalFechadosPeriodo), icon: TrendingUp, accent: '#22c55e', iconBg: '#f0fdf4', iconColor: '#16a34a', subtitle: activeTab === 'Fechados' ? `Período: ${DATE_FILTERS.find(f => f.id === dateFilter)?.label}` : undefined },
     { label: 'A Receber (Mesas)', value: formatPrice(totalEmAberto), icon: Clock, accent: '#f59e0b', iconBg: '#fef3c7', iconColor: '#b45309' },
   ];
 
@@ -121,18 +154,8 @@ const Caixa = () => {
         <div>
           <h1 style={{ fontSize: '1.875rem', fontWeight: 800, letterSpacing: '-0.025em' }}>Controle de Caixa</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-            Receba pagamentos das mesas e pedidos
+            Receba pagamentos das mesas e consulte histórico
           </p>
-        </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button className="btn btn-secondary btn-sm">
-            <Calendar size={14} />
-            Hoje
-          </button>
-          <button className="btn btn-primary btn-sm">
-            <Download size={14} />
-            Exportar
-          </button>
         </div>
       </div>
 
@@ -154,6 +177,7 @@ const Caixa = () => {
               </div>
               <div className="stat-label">{s.label}</div>
               <div className="stat-value" style={{ fontSize: '1.5rem' }}>{s.value}</div>
+              {s.subtitle && <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>{s.subtitle}</div>}
             </motion.div>
           );
         })}
@@ -181,14 +205,37 @@ const Caixa = () => {
               </button>
             ))}
           </div>
-          <div className="search-bar" style={{ width: 280 }}>
-            <Filter size={14} color="var(--text-muted)" />
-            <input
-              type="text"
-              placeholder="Buscar mesa, nome ou ID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            {activeTab === 'Fechados' && (
+              <div style={{ display: 'flex', gap: '0.25rem', background: 'var(--surface-subtle)', padding: '3px', borderRadius: 'var(--radius-md)' }}>
+                {DATE_FILTERS.map(df => (
+                  <button
+                    key={df.id}
+                    onClick={() => setDateFilter(df.id)}
+                    style={{
+                      padding: '0.3rem 0.75rem', border: 'none', borderRadius: 7,
+                      background: dateFilter === df.id ? 'var(--surface)' : 'transparent',
+                      color: dateFilter === df.id ? 'var(--text-primary)' : 'var(--text-muted)',
+                      fontWeight: dateFilter === df.id ? 700 : 500, fontSize: '0.8rem', cursor: 'pointer',
+                      boxShadow: dateFilter === df.id ? 'var(--shadow-sm)' : 'none',
+                      transition: 'all 0.15s', fontFamily: 'inherit',
+                    }}
+                  >
+                    {df.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="search-bar" style={{ width: 220 }}>
+              <Filter size={14} color="var(--text-muted)" />
+              <input
+                type="text"
+                placeholder="Buscar mesa, nome ou ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
@@ -197,6 +244,7 @@ const Caixa = () => {
           <table className="data-table caixa-table">
             <thead>
               <tr>
+                <th>Data</th>
                 <th>Horário</th>
                 <th>Origem</th>
                 <th>Cliente</th>
@@ -209,58 +257,98 @@ const Caixa = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
                     Carregando dados...
                   </td>
                 </tr>
               ) : displayedOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
                     Nenhum pedido encontrado.
                   </td>
                 </tr>
               ) : (
                 displayedOrders.map((tx, i) => (
-                  <motion.tr
-                    key={tx.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.04 }}
-                  >
-                    <td data-label="Horário">
-                      <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.85rem' }}>
-                        {formatTime(tx.created_at)}
-                      </span>
-                    </td>
-                    <td data-label="Origem">
-                      <span style={{ display: 'inline-block', padding: '2px 8px', background: 'var(--surface-subtle)', borderRadius: '4px', fontWeight: 700, fontSize: '0.85rem' }}>
-                        Mesa {tx.mesa || tx.tipo}
-                      </span>
-                    </td>
-                    <td data-label="Cliente" style={{ fontWeight: 600, fontSize: '0.875rem' }}>{tx.cliente_nome || '-'}</td>
-                    <td data-label="Itens" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                      {tx.itens?.length || 0} itens
-                    </td>
-                    <td data-label="Status">
-                      {getStatusBadge(tx.status)}
-                    </td>
-                    <td data-label="Total" style={{ textAlign: 'right', fontFamily: 'Sora, sans-serif', fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-                      {formatPrice(tx.total)}
-                    </td>
-                    <td data-label="" style={{ textAlign: 'right' }}>
-                      {activeTab === 'Em Aberto' ? (
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                          <button onClick={() => handlePagar(tx.id, 'PIX')} disabled={payingIds.has(tx.id)} className="btn btn-primary btn-sm" title="Receber via PIX" style={{ padding: '0.5rem 0.85rem', background: '#10b981', gap: '0.4rem', opacity: payingIds.has(tx.id) ? 0.6 : 1 }}>
-                            <QrCode size={16} /> {payingIds.has(tx.id) ? '...' : 'Pagar'}
-                          </button>
-                        </div>
-                      ) : (
-                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.25rem' }}>
-                          <CheckCircle size={14} color="#10b981" /> Fechado
+                  <React.Fragment key={tx.id}>
+                    <motion.tr
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.04 }}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => setExpandedOrder(expandedOrder === tx.id ? null : tx.id)}
+                    >
+                      <td data-label="Data">
+                        <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.85rem' }}>
+                          {formatDate(tx.created_at)}
                         </span>
-                      )}
-                    </td>
-                  </motion.tr>
+                      </td>
+                      <td data-label="Horário">
+                        <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.85rem' }}>
+                          {formatTime(tx.created_at)}
+                        </span>
+                      </td>
+                      <td data-label="Origem">
+                        <span style={{ display: 'inline-block', padding: '2px 8px', background: 'var(--surface-subtle)', borderRadius: '4px', fontWeight: 700, fontSize: '0.85rem' }}>
+                          Mesa {tx.mesa || tx.tipo}
+                        </span>
+                      </td>
+                      <td data-label="Cliente" style={{ fontWeight: 600, fontSize: '0.875rem' }}>{tx.cliente_nome || '-'}</td>
+                      <td data-label="Itens" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        {tx.itens?.length || 0} itens
+                      </td>
+                      <td data-label="Status">
+                        {getStatusBadge(tx.status)}
+                      </td>
+                      <td data-label="Total" style={{ textAlign: 'right', fontFamily: 'Sora, sans-serif', fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                        {formatPrice(tx.total)}
+                      </td>
+                      <td data-label="" style={{ textAlign: 'right' }}>
+                        {activeTab === 'Em Aberto' ? (
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                            <button onClick={(e) => { e.stopPropagation(); handlePagar(tx.id, 'PIX'); }} disabled={payingIds.has(tx.id)} className="btn btn-primary btn-sm" title="Receber via PIX" style={{ padding: '0.5rem 0.85rem', background: '#10b981', gap: '0.4rem', opacity: payingIds.has(tx.id) ? 0.6 : 1 }}>
+                              <QrCode size={16} /> {payingIds.has(tx.id) ? '...' : 'Pagar'}
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.25rem' }}>
+                            <CheckCircle size={14} color="#10b981" />
+                            {expandedOrder === tx.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </span>
+                        )}
+                      </td>
+                    </motion.tr>
+                    {expandedOrder === tx.id && (
+                      <tr>
+                        <td colSpan={8} style={{ padding: '0 1.5rem 1rem', background: 'var(--surface-subtle)' }}>
+                          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                <strong>Mesa:</strong> {tx.mesa || tx.tipo}
+                                {tx.cliente_nome && <> · <strong>Cliente:</strong> {tx.cliente_nome}</>}
+                                <> · <strong>Data:</strong> {formatDate(tx.created_at)} às {formatTime(tx.created_at)}</>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                              {(tx.itens || []).map((item, idx) => (
+                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 0', borderBottom: idx < (tx.itens?.length || 0) - 1 ? '1px solid var(--border)' : 'none' }}>
+                                  <div>
+                                    <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{item.quantity}x {item.name}</span>
+                                  </div>
+                                  <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                                    {formatPrice((item.price || 0) * (item.quantity || 1))}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '2px dashed var(--border)', fontSize: '1rem', fontWeight: 800 }}>
+                              <span>Total</span>
+                              <span style={{ color: 'var(--primary)' }}>{formatPrice(tx.total)}</span>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))
               )}
             </tbody>

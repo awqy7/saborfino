@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getUserRole, ROLE_DONO, ROLE_ATENDENTE } from '../lib/roles';
 import Sidebar from './Sidebar';
-import Dashboard from '../pages/Dashboard';
-import POS from '../pages/POS';
-import Caixa from '../pages/Caixa';
-import Relatorios from '../pages/Relatorios';
-import Settings from '../pages/Settings';
-import Cozinha from '../pages/Cozinha';
+
+const Dashboard = lazy(() => import('../pages/Dashboard'));
+const POS = lazy(() => import('../pages/POS'));
+const Caixa = lazy(() => import('../pages/Caixa'));
+const Relatorios = lazy(() => import('../pages/Relatorios'));
+const Settings = lazy(() => import('../pages/Settings'));
+const Cozinha = lazy(() => import('../pages/Cozinha'));
 import { ShoppingCart, UtensilsCrossed, LayoutDashboard, Receipt, BarChart3, Settings as SettingsIcon } from 'lucide-react';
 
 const ProtectedLayout = () => {
@@ -178,19 +179,21 @@ const ProtectedLayout = () => {
       </nav>
 
       <main className="main-content" ref={mainRef} onScroll={handleScroll}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          {role === ROLE_DONO && (
-            <>
-              <Route path="/caixa" element={<Caixa />} />
-              <Route path="/relatorios" element={<Relatorios />} />
-              <Route path="/settings" element={<Settings />} />
-            </>
-          )}
-          <Route path="/pos" element={<POS onToggleSidebar={() => setSidebarOpen(prev => !prev)} />} />
-          <Route path="/cozinha" element={<Cozinha />} />
-          <Route path="*" element={<Navigate to="/app" replace />} />
-        </Routes>
+        <Suspense fallback={<div className="loading"><div className="loading-spinner" /></div>}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            {role === ROLE_DONO && (
+              <>
+                <Route path="/caixa" element={<Caixa />} />
+                <Route path="/relatorios" element={<Relatorios />} />
+                <Route path="/settings" element={<Settings />} />
+              </>
+            )}
+            <Route path="/pos" element={<POS onToggleSidebar={() => setSidebarOpen(prev => !prev)} />} />
+            <Route path="/cozinha" element={<Cozinha />} />
+            <Route path="*" element={<Navigate to="/app" replace />} />
+          </Routes>
+        </Suspense>
       </main>
     </div>
   );

@@ -487,7 +487,7 @@ export default function HomeCardapio() {
           background-image:
             linear-gradient(90deg, rgba(5, 5, 5, 0.12) 0%, rgba(5, 5, 5, 0) 24%, rgba(5, 5, 5, 0) 72%, rgba(5, 5, 5, 0.1) 100%),
             linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.06)),
-            url('/images/fino-sabor-hero-wide.png'),
+            url('/images/fino-sabor-hero-wide.webp'),
             linear-gradient(122deg, #1a0f0a 0%, #3a1a0b 44%, #070707 100%);
           background-size:
             100% 100%,
@@ -774,8 +774,8 @@ export default function HomeCardapio() {
           border-radius: 10px;
           background-image:
             linear-gradient(90deg, rgba(12, 12, 12, 0.91) 0%, rgba(12, 12, 12, 0.48) 27%, rgba(12, 12, 12, 0) 52%, rgba(12, 12, 12, 0.4) 78%, rgba(12, 12, 12, 0.9) 100%),
-            url('/images/fino-sabor-category-background.png'),
-            url('/images/fino-sabor-reference.png'),
+            url('/images/fino-sabor-category-background.webp'),
+            url('/images/fino-sabor-reference.webp'),
             radial-gradient(ellipse at 52% 54%, rgba(165, 75, 24, 0.7) 0 18%, rgba(61, 24, 7, 0.7) 32%, transparent 55%),
             linear-gradient(90deg, #130f0d 0%, #2a160c 48%, #0b0b0b 100%);
           background-size:

@@ -141,7 +141,7 @@ const POS = ({ onToggleSidebar }) => {
 
   const total = cart.reduce((acc, i) => acc + i.price * i.quantity, 0);
   const itemCount = cart.reduce((acc, i) => acc + i.quantity, 0);
-  const canFinalize = cart.length > 0 && (orderType !== 'mesa' || mesaNum !== '');
+  const canFinalize = cart.length > 0 && (orderType !== 'mesa' || (mesaNum >= 1 && mesaNum <= 7));
   const currentOrderType = ORDER_TYPES.find(t => t.id === orderType);
   const CurrentOrderIcon = currentOrderType?.icon;
 
@@ -152,18 +152,21 @@ const POS = ({ onToggleSidebar }) => {
 
   const handleFinalize = async () => {
     if (!canFinalize || isSubmitting) return;
+    if (orderType === 'mesa' && (!mesaNum || mesaNum < 1 || mesaNum > 7)) { alert('Mesa inválida. Escolha uma mesa de 1 a 7.'); return; }
     setIsSubmitting(true);
     try {
       const mesaLabel = orderType === 'mesa' ? mesa : ORDER_TYPES.find(t => t.id === orderType)?.label;
       const orderData = {
         mesa: mesaLabel,
         cliente_nome: clienteNome.trim() || 'Atendente',
-        status: 'pendente',
+        status: 'preparando',
         itens: cart.map(i => ({ id: i.id, name: i.name, desc: i.desc, price: i.price, quantity: i.quantity, category: i.category, cartKey: i.cartKey })),
         total,
         tipo: orderType,
         observacao: obs || null,
       };
+
+      let orderId = selectedOrderId;
 
       if (selectedOrderId) {
         const { data: existing } = await supabase.from('pedidos').select('itens, total, status').eq('id', selectedOrderId).single();
@@ -171,17 +174,20 @@ const POS = ({ onToggleSidebar }) => {
           await supabase.from('pedidos').update({
             itens: [...(existing.itens || []), ...orderData.itens],
             total: Number(existing.total || 0) + total,
-            status: 'pendente'
+            status: 'preparando'
           }).eq('id', selectedOrderId);
           setStep('finalized');
           setIsSubmitting(false);
+          splitAndPrint({ ...existing, id: selectedOrderId, ...orderData, itens: orderData.itens });
           return;
         }
       }
 
-      const { error } = await supabase.from('pedidos').insert([orderData]);
+      const { data: inserted, error } = await supabase.from('pedidos').insert([orderData]).select().single();
       if (error) throw error;
+      orderId = inserted.id;
       setStep('finalized');
+      splitAndPrint({ ...inserted });
     } catch {
       alert('Erro ao enviar pedido para a cozinha. Tente novamente.');
     } finally {
@@ -257,7 +263,7 @@ const POS = ({ onToggleSidebar }) => {
           {orderType === 'mesa' && (
             <div className="pos-mesa-wrap">
               <Hash size={14} className="pos-mesa-icon" />
-              <input type="number" min="1" placeholder="Nº da mesa" value={mesa} onChange={e => { setMesa(e.target.value); setSelectedOrderId(null); }} className="pos-mesa-field" />
+              <input type="number" min="1" max="7" placeholder="Nº da mesa" value={mesa} onChange={e => { const v = e.target.value.replace(/\D/g, ''); if (v === '' || (parseInt(v, 10) >= 1 && parseInt(v, 10) <= 7)) { setMesa(v); setSelectedOrderId(null); } }} className="pos-mesa-field" />
               {selectedOrderId && <span className="pos-mesa-badge">+</span>}
             </div>
           )}

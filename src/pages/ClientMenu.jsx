@@ -5,11 +5,22 @@ import { Plus, Minus, ShoppingCart, CheckCircle, Clock, Utensils, Send, User, Re
 import { motion } from 'framer-motion';
 import CARDAPIO from '../data/cardapio';
 import { formatPrice } from '../lib/format';
+import { splitAndPrint } from '../lib/printer';
 
 const ClientMenu = () => {
   const { tableId: urlTable } = useParams();
-  const [tableId, setTableId] = useState(urlTable || '');
-  const [showTableInput, setShowTableInput] = useState(!urlTable);
+  const [tableId, setTableId] = useState('');
+  const [showTableInput, setShowTableInput] = useState(true);
+
+  useEffect(() => {
+    if (urlTable) {
+      const num = parseInt(urlTable.replace(/\D/g, ''), 10);
+      if (num >= 1 && num <= 7) {
+        setTableId(String(num));
+        setShowTableInput(false);
+      }
+    }
+  }, [urlTable]);
   const [cart, setCart] = useState([]);
   const [clientName, setClientName] = useState('');
   const [isNameSet, setIsNameSet] = useState(false);
@@ -26,6 +37,8 @@ const ClientMenu = () => {
     return saved ? Number(saved) : 0;
   });
   const [variantModal, setVariantModal] = useState(null);
+
+  const mesaValida = tableId.trim() !== '' && parseInt(tableId, 10) >= 1 && parseInt(tableId, 10) <= 7;
 
   const sections = category === 'Todas'
     ? CARDAPIO
@@ -127,6 +140,7 @@ const ClientMenu = () => {
 
   const handlePlaceOrder = async () => {
     if (!clientName.trim() || cart.length === 0) return;
+    if (!mesaValida) { alert('Mesa inválida. Escolha uma mesa de 1 a 7.'); return; }
 
     const now = Date.now();
     if (now - lastSubmitTime < 30000) {
@@ -181,12 +195,13 @@ const ClientMenu = () => {
 
           setOrderItems(newItens);
           setOrderTotal(newTotal);
-          setOrderStatus('pendente');
+          setOrderStatus('preparando');
           setView('status');
           setCart([]);
           localStorage.setItem('fino_last_order_time', String(now));
           setLastSubmitTime(now);
           setIsSubmitting(false);
+          splitAndPrint({ ...existingOrder, id: currentOrderId, itens: cart, cliente_nome: clientName, mesa: tableId, total, tipo: 'mesa', observacao: null });
           return;
         }
       }
@@ -194,7 +209,7 @@ const ClientMenu = () => {
       const orderData = {
         mesa: tableId,
         cliente_nome: clientName,
-        status: 'pendente',
+        status: 'preparando',
         itens: cart,
         total: total,
         tipo: 'mesa'
@@ -207,9 +222,11 @@ const ClientMenu = () => {
       setCurrentOrderId(data.id);
       setOrderItems(cart);
       setOrderTotal(total);
-      setOrderStatus('pendente');
+      setOrderStatus('preparando');
       setView('status');
       setCart([]);
+
+      splitAndPrint({ ...data });
 
       localStorage.setItem(`fino_sabor_table_${tableId}`, JSON.stringify({
         clientName: clientName.trim(),
@@ -259,18 +276,23 @@ const ClientMenu = () => {
           <div className="input-wrap" style={{ marginBottom: '1.5rem' }}>
             <div className="input-icon"><Utensils size={18} /></div>
             <input 
-              type="number" min="1"
+              type="number" min="1" max="7"
               className="form-input has-icon"
               placeholder="Nº da mesa" 
               value={tableId} 
-              onChange={e => setTableId(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && tableId.trim() && setShowTableInput(false)}
+              onChange={e => {
+                const v = e.target.value.replace(/\D/g, '');
+                if (v === '' || (parseInt(v, 10) >= 1 && parseInt(v, 10) <= 7)) {
+                  setTableId(v);
+                }
+              }}
+              onKeyDown={e => e.key === 'Enter' && mesaValida && setShowTableInput(false)}
             />
           </div>
           <button 
             className="btn btn-primary"
-            onClick={() => { if (tableId.trim()) setShowTableInput(false); }}
-            disabled={!tableId.trim()}
+            onClick={() => mesaValida && setShowTableInput(false)}
+            disabled={!mesaValida}
             style={{ width: '100%', padding: '1rem', fontSize: '1rem', borderRadius: 'var(--radius-md)' }}
           >
             Entrar
