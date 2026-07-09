@@ -130,6 +130,16 @@ function Icon({ name, className = "" }) {
 function DishCard({ item }) {
   const [expanded, setExpanded] = useState(false);
   const hasVariants = Array.isArray(item.variants) && item.variants.length > 0;
+  const hasGroups = hasVariants && item.variants.some(v => v.group);
+
+  const groupedVariants = hasGroups
+    ? item.variants.reduce((acc, v) => {
+        const key = v.group;
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(v);
+        return acc;
+      }, {})
+    : null;
 
   return (
     <article
@@ -158,6 +168,7 @@ function DishCard({ item }) {
         <div className="dish-copy">
           <h3>{item.name}</h3>
           {item.desc && <p>{item.desc}</p>}
+          {!hasVariants && item.price > 0 && <strong>{formatPrice(item.price)}</strong>}
           <div className="dish-meta">
             {hasVariants && (
               <span className="dish-variants-badge">
@@ -172,17 +183,45 @@ function DishCard({ item }) {
       {hasVariants && (
         <div className="dish-variants" aria-hidden={!expanded}>
           <div className="dish-variants-inner">
-            <ul>
-              {item.variants.map((variant) => (
-                <li key={variant.label}>
-                  <span className="variant-dot" aria-hidden="true" />
-                  <span className="variant-copy">
-                    <b>{variant.label}</b>
-                    {variant.desc && <small>{variant.desc}</small>}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            {hasGroups ? (
+              <div className="variant-groups">
+                {Object.entries(groupedVariants).map(([groupName, variants]) => (
+                  <div key={groupName} className="variant-group">
+                    <div className="variant-group-header">
+                      <span className="variant-group-dot" aria-hidden="true" />
+                      <span className="variant-copy">
+                        <b>{groupName}</b>
+                        {variants[0]?.groupDesc && <small>{variants[0].groupDesc}</small>}
+                      </span>
+                    </div>
+                    <ul>
+                      {variants.map(v => (
+                        <li key={v.label}>
+                          <span className="variant-dot" aria-hidden="true" />
+                          <span className="variant-copy">
+                            <b>{v.label}</b>
+                          </span>
+                          {v.price > 0 && <em>{formatPrice(v.price)}</em>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <ul>
+                {item.variants.map((variant) => (
+                  <li key={variant.label}>
+                    <span className="variant-dot" aria-hidden="true" />
+                    <span className="variant-copy">
+                      <b>{variant.label}</b>
+                      {variant.desc && <small>{variant.desc}</small>}
+                    </span>
+                    {variant.price > 0 && <em>{formatPrice(variant.price)}</em>}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       )}
@@ -957,6 +996,49 @@ export default function HomeCardapio() {
         .dish-variants-inner {
           overflow: hidden;
           min-height: 0;
+        }
+        .variant-groups {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          padding: 6px 0;
+        }
+        .variant-group-header {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 8px 12px 4px;
+        }
+        .variant-group-header .variant-copy b {
+          font-size: 13.5px;
+          color: var(--orange);
+        }
+        .variant-group-dot {
+          flex-shrink: 0;
+          width: 8px;
+          height: 8px;
+          margin-top: 5px;
+          border-radius: 2px;
+          background: var(--orange);
+          box-shadow: 0 0 8px rgba(255, 132, 14, 0.6);
+        }
+        .variant-group ul {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          margin: 0 12px;
+          padding: 0 0 6px;
+          list-style: none;
+        }
+        .variant-group ul li {
+          border-color: rgba(255, 132, 14, 0.1);
+          background: rgba(255, 255, 255, 0.015);
+          padding: 7px 11px;
+        }
+        .variant-group + .variant-group {
+          border-top: 1px dashed rgba(255, 132, 14, 0.2);
+          margin: 0 12px;
+          padding-top: 2px;
         }
         .dish-variants ul {
           display: flex;
