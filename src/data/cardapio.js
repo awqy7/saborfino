@@ -85,6 +85,7 @@ export const IMAGES = {
   dishGuarana: '/images/dishes/bebida-guarana.webp',
   dishKuait: '/images/dishes/bebida-kuat.webp',
   dishMateCola: '/images/dishes/bebida-mate.webp',
+  dishDelValle: '/images/dishes/bebida-delvalle.webp',
 
   // Cervejas
   bannerCervejas: '/images/fino-sabor-category-background.webp',
@@ -157,6 +158,10 @@ export const IMAGES = {
   dishMetropolitano: '/images/dishes/dose-metropolitano.webp',
   dishMacaxeira: '/images/dishes/macaxeira.webp',
   dishCorona: '/images/dishes/corona.webp',
+
+  // Vinhos
+  bannerVinhos: '/images/fino-sabor-category-background.webp',
+  dishPergola: '/images/dishes/dose-pergola.webp',
 };
 
 const sections = [
@@ -322,6 +327,13 @@ const sections = [
         { label: '200ml', price: 0 },
         { label: '1.5L', price: 0 },
       ]},
+      { id: 306, name: 'Suco Del Valle', desc: 'Suco Del Valle', price: 0, image: IMAGES.dishDelValle, variantLabel: '5 sabores', variants: [
+        { label: 'Pêssego', price: 0 },
+        { label: 'Uva', price: 0 },
+        { label: 'Manga', price: 0 },
+        { label: 'Goiaba', price: 0 },
+        { label: 'Maracujá', price: 0 },
+      ]},
     ],
   },
   {
@@ -397,11 +409,17 @@ const sections = [
       { id: 524, name: 'Orloff', desc: 'Vodka', price: 10, image: IMAGES.dishOrloff },
       // Vermute
       { id: 520, name: 'Martini', desc: 'Vermute', price: 0, image: IMAGES.dishMartini },
-      // Vinhos
+    ],
+  },
+  {
+    category: 'Vinhos',
+    image: IMAGES.bannerVinhos,
+    items: [
       { id: 521, name: 'Reservado Malbec', desc: 'Vinho', price: 0, image: IMAGES.dishReservadoMalbec },
       { id: 522, name: 'Metropolitano', desc: 'Vinho', price: 0, image: IMAGES.dishMetropolitano },
       { id: 527, name: 'Reservado Carmenere', desc: 'Vinho', price: 0, image: IMAGES.dishReservadoCarmenere },
       { id: 528, name: 'Reservado Merlot', desc: 'Vinho', price: 0, image: IMAGES.dishReservadoMerlot },
+      { id: 529, name: 'Pérgola', desc: 'Vinho', price: 0, image: IMAGES.dishPergola },
     ],
   },
   {
@@ -726,5 +744,5 @@ export const MENU_DISPLAY = [
 ];
 
 // Reordena para manter a mesma ordem original das categorias
-const ORDER = ['Chapas', 'Espetos 500g/1kg', 'Porções', 'Entradas', 'Espetinhos', 'Guarnições', 'Pães de Alho', 'Bebidas', 'Cervejas', 'Doses', 'Drinks'];
+const ORDER = ['Chapas', 'Espetos 500g/1kg', 'Porções', 'Entradas', 'Espetinhos', 'Guarnições', 'Pães de Alho', 'Bebidas', 'Cervejas', 'Doses', 'Vinhos', 'Drinks'];
 MENU_DISPLAY.sort((a, b) => ORDER.indexOf(a.category) - ORDER.indexOf(b.category));
