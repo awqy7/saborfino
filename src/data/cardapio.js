@@ -139,7 +139,7 @@ export const IMAGES = {
   dishGinLemon: '/images/dishes/drink-ginlemon.webp',
   dishCapiVodka: '/images/dishes/drink-capivodka.webp',
   dishPinaColada: '/images/dishes/drink-pinacolada.webp',
-  dishMartine: '/images/dishes/drink-martine.webp',
+
   dishSexOnTheBeach: '/images/dishes/drink-sexonthebeach.webp',
   dishNegroni: '/images/dishes/drink-negroni.webp',
   dishDryMartini: '/images/dishes/dry-martini.webp',
@@ -152,6 +152,8 @@ export const IMAGES = {
   dishBombay: '/images/dishes/dose-bombay.webp',
   dishMartini: '/images/dishes/dose-martini.webp',
   dishReservadoMalbec: '/images/dishes/dose-reservado-malbec.webp',
+  dishReservadoCarmenere: '/images/dishes/dose-reservado-carmenere.webp',
+  dishReservadoMerlot: '/images/dishes/dose-reservado-merlot.webp',
   dishMetropolitano: '/images/dishes/dose-metropolitano.webp',
   dishMacaxeira: '/images/dishes/macaxeira.webp',
   dishCorona: '/images/dishes/corona.webp',
@@ -217,12 +219,11 @@ const sections = [
       { id: 47, name: 'Isca de Tilápia', desc: 'Filé de tilápia empanado com fritas', price: 70, image: IMAGES.dishTilapiaFrita },
       { id: 48, name: 'Torresmo de Rolo', desc: 'Crocante com geleia de pimenta e aperitivos', price: 50, image: IMAGES.dishTorresmoRolo },
       { id: 69, name: 'Torresmo com Mandioca', desc: '400g inteiro', price: 40, image: IMAGES.dishTorresmoNovo },
-      { id: 76, name: 'Torresmo com Mandioca', desc: '400g moído', price: 40, image: IMAGES.dishTorresmoNovo },
       { id: 50, name: 'Fritas', desc: '400g de batata frita crocante e sequinha', price: 20, image: IMAGES.dishFritasPuras },
       { id: 53, name: 'Fritas com Cheddar e Bacon', desc: '400g de batata frita com cheddar e bacon crocante', price: 35, image: IMAGES.dishFritasQueijoBacon },
       { id: 73, name: 'Calabresa 400g', desc: 'Calabresa acebolada', price: 30, image: IMAGES.dishCalabresa },
       { id: 77, name: 'Calabresa com Fritas', desc: 'Calabresa acebolada com fritas', price: 45, image: IMAGES.dishCalabresa },
-      { id: 79, name: 'Macaxeira', desc: 'Macaxeira cozida na manteiga', price: 70, image: IMAGES.dishMacaxeira },
+      { id: 79, name: 'Macaxeira', desc: 'Carne de sol com mandioca cozida na manteiga', price: 70, image: IMAGES.dishMacaxeira },
     ],
   },
   {
@@ -382,7 +383,7 @@ const sections = [
       { id: 509, name: 'Beefeater Strawberry', desc: 'Gin', price: 20, image: IMAGES.dishBeefeaterStrawberry },
       { id: 508, name: "Gordon's", desc: 'Gin', price: 15, image: IMAGES.dishGordon },
       { id: 507, name: "Gilbe's Gin", desc: 'Gin', price: 13, image: IMAGES.dishGilbes },
-      { id: 517, name: 'Bombay', desc: 'Gin', price: 0, image: IMAGES.dishBombay },
+      { id: 517, name: 'Bombay', desc: 'Gin', price: 20, image: IMAGES.dishBombay },
       // Tequila
       { id: 518, name: 'José Cuervo', desc: 'Tequila', price: 0, image: IMAGES.dishJoseCuervo },
       { id: 519, name: 'El Loco', desc: 'Tequila', price: 0, image: IMAGES.dishElLoco },
@@ -399,6 +400,8 @@ const sections = [
       // Vinhos
       { id: 521, name: 'Reservado Malbec', desc: 'Vinho', price: 0, image: IMAGES.dishReservadoMalbec },
       { id: 522, name: 'Metropolitano', desc: 'Vinho', price: 0, image: IMAGES.dishMetropolitano },
+      { id: 527, name: 'Reservado Carmenere', desc: 'Vinho', price: 0, image: IMAGES.dishReservadoCarmenere },
+      { id: 528, name: 'Reservado Merlot', desc: 'Vinho', price: 0, image: IMAGES.dishReservadoMerlot },
     ],
   },
   {
@@ -423,10 +426,9 @@ const sections = [
       { id: 119, name: 'Gin e Lemon', desc: 'Gin 50ml · Soda Limonada 100ml · Gelo', price: 30, image: IMAGES.dishGinLemon },
       { id: 121, name: 'Capi Vodka', desc: 'Vodka 50ml · Limão · Açúcar · Gelo', price: 0, image: IMAGES.dishCapiVodka },
       { id: 122, name: 'Pina Colada', desc: 'Rum Branco 50ml · Suco de Abacaxi · Leite de Coco · Gelo', price: 0, image: IMAGES.dishPinaColada },
-      { id: 123, name: 'Martine', desc: 'Vodka 60ml · Vermute Seco 15ml · Azeitona · Gelo', price: 0, image: IMAGES.dishMartine },
       { id: 124, name: 'Sex on the Beach', desc: 'Vodka 50ml · Licor de Pêssego · Suco de Laranja · Suco de Cranberry · Gelo', price: 0, image: IMAGES.dishSexOnTheBeach },
       { id: 107, name: 'Negroni', desc: 'Gin 30ml · Campari 30ml · Vermute Rosso 30ml · Casca de Laranja', price: 0, image: IMAGES.dishNegroni },
-      { id: 120, name: 'Dry Martini', desc: 'Gin 60ml · Vermute Seco 15ml · Azeitona · Gelo', price: 0, image: IMAGES.dishDryMartini },
+      { id: 120, name: 'Dry Martini', desc: 'gin, vermute seco', price: 0, image: IMAGES.dishDryMartini },
       { id: 125, name: 'Canarinho', desc: 'Vodka · Xarope de Caramelo · Maracujá · Limão Taiti', price: 0, image: IMAGES.dishCanarinho },
       { id: 126, name: 'Cuba', desc: 'Bacardi · Coca-Cola · Gelo', price: 0, image: IMAGES.dishCuba },
     ],
@@ -648,11 +650,7 @@ export const MENU_DISPLAY = [
         desc: 'Torresmo pururuca crocante com mandioca cozida na manteiga',
         image: IMAGES.dishTorresmoNovo,
         price: 0,
-        variantLabel: '2 opções',
-        variants: [
-          { label: '400g inteiro', price: 40 },
-          { label: '400g moído', price: 40 },
-        ],
+        price: 40,
       },
       {
         id: 'fritas',
@@ -678,7 +676,7 @@ export const MENU_DISPLAY = [
           { label: 'Calabresa com Fritas', price: 45 },
         ],
       },
-      { id: 79, name: 'Macaxeira', desc: 'Macaxeira cozida na manteiga', price: 70, image: IMAGES.dishMacaxeira },
+      { id: 79, name: 'Macaxeira', desc: 'Carne de sol com mandioca cozida na manteiga', price: 70, image: IMAGES.dishMacaxeira },
     ],
   },
   {
