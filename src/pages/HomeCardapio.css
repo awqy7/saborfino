@@ -1,0 +1,21 @@
+.dish-shot {
+  background-size: cover !important;
+}
+
+.category-block {
+  margin-bottom: 30px;
+}
+
+.category-block:first-of-type {
+  margin-bottom: 0;
+}
+
+.category-panel {
+  background-size: 100% 100%, auto 100%, 100% 100%, 100% 100%;
+  background-position: center, center, center, center;
+  background-repeat: no-repeat;
+}
+
+.dish-grid {
+  margin-top: 13px;
+}

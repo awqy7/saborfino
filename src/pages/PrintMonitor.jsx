@@ -110,7 +110,7 @@ const PrintMonitor = () => {
   useEffect(() => {
     const channel = supabase.channel('print-monitor')
       .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'pedidos', filter: 'status=eq.pendente' },
+        { event: 'INSERT', schema: 'public', table: 'pedidos', filter: 'status=eq.preparando' },
         async (payload) => {
           const order = payload.new;
           addLog(`Pedido detectado: Mesa ${order.mesa || 'Balcão'} — ${order.cliente_nome || '?'}`, 'info');

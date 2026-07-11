@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MENU_DISPLAY } from "../data/cardapio";
 import { formatPrice } from "../lib/format";
+import "./HomeCardapio.css";
 
 const slugify = (str) =>
   str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-");
@@ -161,7 +162,7 @@ function DishCard({ item, defaultExpanded = false }) {
     >
       <div className="dish-main">
         {item.image ? (
-          <div className="dish-shot" style={{ backgroundImage: `url(${item.image})`, backgroundSize: item.bgSize || undefined }} aria-hidden="true" />
+          <div className="dish-shot" style={{ backgroundImage: `url(${item.image})` }} aria-hidden="true" />
         ) : (
           <div className="dish-shot dish-shot-placeholder" aria-hidden="true" />
         )}
@@ -231,7 +232,7 @@ function DishCard({ item, defaultExpanded = false }) {
 
 function MenuCategory({ section, isFirst = false, onCategoryClick }) {
   return (
-    <div className="category-block" id={`cat-${slugify(section.category)}`} style={{ marginBottom: isFirst ? 0 : 30 }}>
+    <div className="category-block" id={`cat-${slugify(section.category)}`}>
       <div className="category-panel" style={{
         backgroundImage: `
           linear-gradient(90deg, rgba(12,12,12,0.91) 0%, rgba(12,12,12,0.48) 27%, rgba(12,12,12,0) 52%, rgba(12,12,12,0.4) 78%, rgba(12,12,12,0.9) 100%),
@@ -239,9 +240,6 @@ function MenuCategory({ section, isFirst = false, onCategoryClick }) {
           radial-gradient(ellipse at 52% 54%, rgba(165,75,24,0.7) 0 18%, rgba(61,24,7,0.7) 32%, transparent 55%),
           linear-gradient(90deg, #130f0d 0%, #2a160c 48%, #0b0b0b 100%)
         `,
-        backgroundSize: "100% 100%, auto 100%, 100% 100%, 100% 100%",
-        backgroundPosition: "center, center, center, center",
-        backgroundRepeat: "no-repeat",
       }}>
         <div className="category-flame">
           <Icon name="flame" />
@@ -259,7 +257,7 @@ function MenuCategory({ section, isFirst = false, onCategoryClick }) {
         </button>
       </div>
 
-      <div className="dish-grid" style={{ marginTop: 13 }}>
+      <div className="dish-grid">
         {section.items.map((item, idx) => (
           <DishCard item={item} key={item.id} defaultExpanded={section.category === 'Chapas'} />
         ))}

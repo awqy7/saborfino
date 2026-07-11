@@ -75,7 +75,7 @@ const Caixa = () => {
     try {
       const { error } = await supabase
         .from('pedidos')
-        .update({ status: 'pago' })
+        .update({ status: 'pago', metodo_pagamento: method })
         .eq('id', id);
 
       if (error) throw error;

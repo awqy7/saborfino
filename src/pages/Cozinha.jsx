@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { formatPrice } from '../lib/format';
 
 const FOOD_CATEGORIES = ['Chapas', 'Espetos 500g/1kg', 'Porções', 'Entradas', 'Espetinhos', 'Guarnições', 'Pães de Alho'];
-const DRINK_CATEGORIES = ['Drinks'];
+const DRINK_CATEGORIES = ['Drinks', 'Bebidas'];
 
 function getStationForItem(item) {
   if (DRINK_CATEGORIES.includes(item?.category)) return 'bar';
@@ -120,7 +120,9 @@ const Cozinha = () => {
         {TABS.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
-          const count = filteredOrders.length;
+          const count = orders
+            .map(o => ({ ...o, itens: (o.itens || []).filter(i => getStationForItem(i) === tab.id) }))
+            .filter(o => o.itens.length > 0).length;
           return (
             <button
               key={tab.id}

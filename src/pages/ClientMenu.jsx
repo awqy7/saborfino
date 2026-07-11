@@ -38,6 +38,17 @@ const ClientMenu = () => {
   });
   const [variantModal, setVariantModal] = useState(null);
 
+  // Gera ou recupera client_token UUID único por sessão (não precisa de login)
+  const [clientToken] = useState(() => {
+    let token = localStorage.getItem('fino_client_token');
+    if (!token) {
+      // crypto.randomUUID() disponível em todos navegadores modernos
+      token = crypto.randomUUID();
+      localStorage.setItem('fino_client_token', token);
+    }
+    return token;
+  });
+
   const mesaValida = tableId.trim() !== '' && parseInt(tableId, 10) >= 1 && parseInt(tableId, 10) <= 7;
 
   const sections = category === 'Todas'
@@ -71,12 +82,21 @@ const ClientMenu = () => {
 
     const fetchOrder = async () => {
       setIsLoadingOrder(true);
-      const { data } = await supabase.from('pedidos').select('status, itens, total').eq('id', currentOrderId).single();
+      const { data } = await supabase
+        .from('pedidos')
+        .select('status, itens, total, client_token')
+        .eq('id', currentOrderId)
+        .maybeSingle();
       setIsLoadingOrder(false);
       if (data) {
-        setOrderStatus(data.status);
-        setOrderItems(data.itens || []);
-        setOrderTotal(data.total || 0);
+        if (data.client_token === clientToken) {
+          setOrderStatus(data.status);
+          setOrderItems(data.itens || []);
+          setOrderTotal(data.total || 0);
+        } else {
+          setCurrentOrderId(null);
+          setView('menu');
+        }
       }
     };
     
@@ -86,6 +106,7 @@ const ClientMenu = () => {
       .channel(`pedido_${currentOrderId}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pedidos', filter: `id=eq.${currentOrderId}` }, (payload) => {
         if (!payload.new) return;
+        if (payload.new.client_token !== clientToken) return;
         setOrderStatus(payload.new.status);
         setOrderItems(payload.new.itens || []);
         setOrderTotal(payload.new.total || 0);
@@ -95,7 +116,7 @@ const ClientMenu = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentOrderId]);
+  }, [currentOrderId, clientToken]);
 
   const addToCart = (product) => {
     setCart(prev => {
@@ -148,32 +169,6 @@ const ClientMenu = () => {
       return;
     }
 
-    const { data: recentOrders, error: countErr } = await supabase
-      .from('pedidos')
-      .select('id, created_at')
-      .eq('mesa', tableId)
-      .gte('created_at', new Date(now - 3600000).toISOString());
-
-    if (!countErr && recentOrders && recentOrders.length >= 5) {
-      alert(`Mesa ${tableId} ja fez muitos pedidos na ultima hora (${recentOrders.length}). Aguarde ou chame um garcom.`);
-      return;
-    }
-
-    const { data: tableOrders } = await supabase
-      .from('pedidos')
-      .select('id, cliente_nome')
-      .eq('mesa', tableId)
-      .in('status', ['pendente', 'preparando']);
-
-    if (tableOrders && tableOrders.length > 0 && !currentOrderId) {
-      const other = tableOrders.find(o => o.cliente_nome !== clientName.trim());
-      if (other) {
-        if (!confirm(`Ja existe um pedido pendente na Mesa ${tableId} em nome de "${other.cliente_nome}". Deseja continuar?`)) {
-          return;
-        }
-      }
-    }
-
     setIsSubmitting(true);
     try {
       if (currentOrderId) {
@@ -190,7 +185,7 @@ const ClientMenu = () => {
           await supabase.from('pedidos').update({
             itens: newItens,
             total: newTotal,
-            status: 'pendente'
+            status: 'preparando'
           }).eq('id', currentOrderId);
 
           setOrderItems(newItens);
@@ -212,7 +207,8 @@ const ClientMenu = () => {
         status: 'preparando',
         itens: cart,
         total: total,
-        tipo: 'mesa'
+        tipo: 'mesa',
+        client_token: clientToken
       };
 
       const { data, error } = await supabase.from('pedidos').insert([orderData]).select().single();
@@ -237,7 +233,15 @@ const ClientMenu = () => {
 
     } catch (err) {
       console.error("Erro ao fazer pedido:", err);
-      alert("Houve um erro ao enviar seu pedido. Chame um garçom.");
+      if (err.message && err.message.includes('violates row-level security')) {
+        alert('Erro de permissão. Recarregue a página e tente novamente.');
+      } else if (err.message && err.message.includes('Preço inválido')) {
+        alert('Erro de segurança: preço inválido detectado. Recarregue a página.');
+      } else if (err.message && err.message.includes('Total do pedido não confere')) {
+        alert('Erro de segurança: total adulterado detectado.');
+      } else {
+        alert("Houve um erro ao enviar seu pedido. Chame um garçom.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -399,7 +403,7 @@ const ClientMenu = () => {
                           if (item.variants?.length > 0) {
                             setVariantModal({ ...item, category: section.category });
                           } else {
-                            addToCart({ ...item, category: section.category, cartKey: `${item.id}` });
+                            addToCart({ ...item, category: section.category, cartKey: `${item.id}-${Date.now()}` });
                           }
                         }}
                       >

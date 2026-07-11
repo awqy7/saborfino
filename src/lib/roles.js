@@ -9,20 +9,11 @@ export async function getUserRole(userId, email) {
       .from('perfis')
       .select('role')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
-      const { data: perfilEmail } = await supabase
-        .from('perfis')
-        .select('role')
-        .eq('email', email)
-        .maybeSingle();
-      
-      if (perfilEmail) return perfilEmail.role;
-      return null;
-    }
-
-    return data.role;
+    if (data) return data.role;
+    if (error) console.error('getUserRole fetch error:', error);
+    return null;
   } catch {
     return null;
   }

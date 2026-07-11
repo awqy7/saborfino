@@ -1,16 +1,44 @@
-# React + Vite
+# Sabor Fino
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sistema de gestão para restaurante com cardápio online, POS (ponto de venda), cozinha, caixa e relatórios. Construído com React + Vite + Supabase.
 
-Currently, two official plugins are available:
+## Funcionalidades
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Cardápio Online** — Cardápio público com ~150 itens categorizados
+- **Pedidos via Mesa** — Clientes fazem pedidos por QR code na mesa
+- **POS** — Ponto de venda para atendentes com busca de itens
+- **Cozinha** — Painel de pedidos com filtro por estação
+- **Caixa** — Fechamento de contas com múltiplas formas de pagamento
+- **Dashboard** — Relatórios e métricas do restaurante
+- **Impressão** — Monitor de impressão térmica com Supabase Realtime
+- **Autenticação** — Login com controle de acesso por função (dono, atendente)
 
-## React Compiler
+## Tecnologias
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React 19 + Vite 8
+- Supabase (auth, banco, Realtime)
+- React Router DOM
+- ESLint (configurado para React + Hooks)
 
-## Expanding the ESLint configuration
+## Scripts
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm run dev       # Desenvolvimento
+npm run build     # Build de produção
+npm run preview   # Preview do build
+npm run lint      # ESLint
+npm run test      # Testes (vitest)
+```
+
+## Deploy
+
+Build gera arquivos estáticos em `dist/`. Configurado para deploy no Netlify via `netlify.toml`.
+
+## Banco de Dados
+
+Execute `setup_database.sql` no painel SQL do Supabase. Inclui:
+
+- Tabelas: `perfis`, `pedidos`, `itens_pedido`
+- Row Level Security (RLS) com políticas por função
+- Trigger `validar_pedido()` para validação de integridade
+- Índices de performance

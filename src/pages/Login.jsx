@@ -21,7 +21,18 @@ const Login = () => {
     const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (signInError) {
-      setError(signInError.message);
+      const msg = signInError.message || '';
+      if (msg.includes('Invalid login credentials')) {
+        setError('E-mail ou senha incorretos.');
+      } else if (msg.includes('Email not confirmed')) {
+        setError('E-mail não confirmado. Verifique sua caixa de entrada.');
+      } else if (msg.includes('rate_limit') || msg.includes('Too many requests')) {
+        setError('Muitas tentativas. Aguarde alguns segundos e tente novamente.');
+      } else if (msg.includes('network') || msg.includes('fetch')) {
+        setError('Erro de conexão. Verifique sua internet.');
+      } else {
+        setError('Erro ao fazer login. Tente novamente.');
+      }
       setLoading(false);
       return;
     }

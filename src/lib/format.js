@@ -1,4 +1,6 @@
 export function formatPrice(value) {
   if (value === null || value === undefined) return '—';
-  return `R$ ${value.toFixed(2).replace('.', ',')}`;
+  const num = typeof value === 'number' ? value : parseFloat(value);
+  if (isNaN(num)) return '—';
+  return `R$ ${num.toFixed(2).replace('.', ',')}`;
 }

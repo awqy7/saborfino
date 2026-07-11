@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import HomeCardapio from './pages/HomeCardapio';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -25,8 +25,8 @@ const App = () => {
               <Route path="/login" element={<Login />} />
               <Route path="/order/:tableId" element={<ClientMenu />} />
               <Route path="/order" element={<ClientMenu />} />
-              <Route path="/menu/:tableId" element={<ClientMenu />} />
-              <Route path="/menu" element={<ClientMenu />} />
+              <Route path="/menu/:tableId" element={<Navigate to={({ params }) => `/order/${params.tableId}`} />} />
+              <Route path="/menu" element={<Navigate to="/order" />} />
               <Route path="/print-monitor" element={<PrintMonitor />} />
               <Route path="/app/*" element={<ProtectedLayout />} />
             </Routes>

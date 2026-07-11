@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import CARDAPIO from '../data/cardapio';
 import { formatPrice } from '../lib/format';
+import { validateOrderData } from '../lib/validation';
 import { splitAndPrint } from '../lib/printer';
 
 const ORDER_TYPES = [
@@ -117,10 +118,11 @@ const POS = ({ onToggleSidebar }) => {
   }, [category, searchTerm]);
 
   const addToCart = (product) => {
+    const key = product.cartKey || `item-${product.id}-${Date.now()}`;
     setCart(prev => {
-      const existing = prev.find(i => i.cartKey === product.cartKey);
-      if (existing) return prev.map(i => i.cartKey === product.cartKey ? { ...i, quantity: i.quantity + 1 } : i);
-      return [...prev, { ...product, quantity: 1 }];
+      const existing = prev.find(i => i.cartKey === key);
+      if (existing) return prev.map(i => i.cartKey === key ? { ...i, quantity: i.quantity + 1 } : i);
+      return [...prev, { ...product, cartKey: key, quantity: 1 }];
     });
   };
 
@@ -135,7 +137,14 @@ const POS = ({ onToggleSidebar }) => {
     setVariantModal(null);
   };
 
-  const removeOne = (cartKey) => setCart(prev => prev.map(i => i.cartKey === cartKey ? (i.quantity > 1 ? { ...i, quantity: i.quantity - 1 } : null) : i).filter(Boolean));
+  const removeOne = (id) => {
+    setCart(prev => {
+      const item = prev.find(i => i.id === id || i.cartKey === id);
+      if (!item) return prev;
+      if (item.quantity > 1) return prev.map(i => (i.id === id || i.cartKey === id) ? { ...i, quantity: i.quantity - 1 } : i);
+      return prev.filter(i => i.id !== id && i.cartKey !== id);
+    });
+  };
   const removeFromCart = (cartKey) => setCart(prev => prev.filter(i => i.cartKey !== cartKey));
   const updateQuantity = (cartKey, delta) => setCart(prev => prev.map(i => i.cartKey === cartKey ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i).filter(i => i.quantity > 0));
 
@@ -153,19 +162,23 @@ const POS = ({ onToggleSidebar }) => {
   const handleFinalize = async () => {
     if (!canFinalize || isSubmitting) return;
     if (orderType === 'mesa' && (!mesaNum || mesaNum < 1 || mesaNum > 7)) { alert('Mesa inválida. Escolha uma mesa de 1 a 7.'); return; }
+    const mesaLabel = orderType === 'mesa' ? mesa : (ORDER_TYPES.find(t => t.id === orderType)?.label || orderType);
+    const orderData = {
+      mesa: mesaLabel,
+      cliente_nome: clienteNome.trim() || 'Atendente',
+      status: 'preparando',
+      itens: cart.map(i => ({ id: i.id, name: i.name, desc: i.desc, price: i.price, quantity: i.quantity, category: i.category, cartKey: i.cartKey })),
+      total,
+      tipo: orderType,
+      observacao: obs || null,
+    };
+    const validation = validateOrderData(orderData);
+    if (!validation.valid) {
+      alert(validation.errors.join('\n'));
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const mesaLabel = orderType === 'mesa' ? mesa : ORDER_TYPES.find(t => t.id === orderType)?.label;
-      const orderData = {
-        mesa: mesaLabel,
-        cliente_nome: clienteNome.trim() || 'Atendente',
-        status: 'preparando',
-        itens: cart.map(i => ({ id: i.id, name: i.name, desc: i.desc, price: i.price, quantity: i.quantity, category: i.category, cartKey: i.cartKey })),
-        total,
-        tipo: orderType,
-        observacao: obs || null,
-      };
-
       let orderId = selectedOrderId;
 
       if (selectedOrderId) {

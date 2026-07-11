@@ -73,12 +73,13 @@ const Dashboard = () => {
       const clientesSet = new Set(paidHoje.map(o => o.cliente_nome).filter(Boolean));
       const ticket = paidHoje.length > 0 ? totalVendas / paidHoje.length : 0;
 
-      // Aggregate top items from all orders (last 30 days)
-      const trintaDias = new Date(); trintaDias.setDate(trintaDias.getDate() - 30);
-      const { data: allOrders } = await supabase
+      const limiteData = new Date(); limiteData.setDate(limiteData.getDate() - 30);
+      const { data: allOrders, error: ordErr } = await supabase
         .from('pedidos')
         .select('itens')
-        .gte('created_at', trintaDias.toISOString());
+        .gte('created_at', limiteData.toISOString())
+        .limit(500);
+      if (ordErr) console.error('Erro topItems:', ordErr);
 
       const itemCount = {};
       (allOrders || []).forEach(o => {
@@ -161,7 +162,7 @@ const Dashboard = () => {
             <Clock size={14} />
             Hoje
           </button>
-          <button className="btn btn-primary btn-sm" onClick={() => navigate('/pos')}>
+          <button className="btn btn-primary btn-sm" onClick={() => navigate('/app/pos')}>
             Novo Pedido
             <ArrowUpRight size={14} />
           </button>

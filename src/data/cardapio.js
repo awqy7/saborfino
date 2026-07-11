@@ -85,7 +85,7 @@ export const IMAGES = {
   dishGuarana: '/images/dishes/bebida-guarana.webp',
   dishKuait: '/images/dishes/bebida-kuat.webp',
   dishMateCola: '/images/dishes/bebida-mate.webp',
-  dishDelValle: '/images/dishes/bebida-delvalle.webp',
+  dishDelValle: '/images/dishes/bebida-delvalle.jpg',
 
   // Cervejas
   bannerCervejas: '/images/fino-sabor-category-background.webp',
@@ -162,6 +162,14 @@ export const IMAGES = {
   // Vinhos
   bannerVinhos: '/images/fino-sabor-category-background.webp',
   dishPergola: '/images/dishes/dose-pergola.webp',
+
+  // Novos itens
+  dishAgua: '/images/dishes/agua.jpg',
+  dishAguaComGas: '/images/dishes/agua-com-gas.jpg',
+  dishRedBull: '/images/dishes/bebida-redbull.jpg',
+  dishMonster: '/images/dishes/bebida-monster.webp',
+  dishIceSyn: '/images/dishes/ice-syn.jpg',
+  dishIceCabare: '/images/dishes/ice-cabare.jpg',
 };
 
 const sections = [
@@ -171,8 +179,8 @@ const sections = [
     items: [
       { id: 16, name: 'Picanha na Chapa 400g', desc: '400g de picanha, 200g de batata frita c/ queijo e bacon e 200g de mandioca cozida na manteiga de garrafa', price: 120, image: IMAGES.dishChapa1 },
       { id: 17, name: 'Picanha na Chapa 600g', desc: '600g de picanha, 200g de batata frita c/ queijo e bacon e 200g de mandioca cozida na manteiga de garrafa', price: 150, image: IMAGES.dishChapa2 },
-      { id: 18, name: 'Picanha na Chapa 800g', desc: '800g de picanha, 300g de batata frita c/ queijo e bacon e 300g de mandioca cozida na manteiga de garrafa', price: 200, image: IMAGES.dishChapa3 },
-      { id: 19, name: 'Picanha na Chapa 1kg', desc: '1kg de picanha, 300g de batata frita c/ queijo e bacon e 300g de mandioca cozida na manteiga de garrafa', price: 250, image: IMAGES.dishChapa4 },
+      { id: 18, name: 'Picanha na Chapa 800g', desc: '800g de picanha, 300g de batata frita c/ queijo e bacon e 300g de mandioca cozida na manteiga de garrafa', price: 190, image: IMAGES.dishChapa3 },
+      { id: 19, name: 'Picanha na Chapa 1kg', desc: '1kg de picanha, 300g de batata frita c/ queijo e bacon e 300g de mandioca cozida na manteiga de garrafa', price: 220, image: IMAGES.dishChapa4 },
       { id: 68, name: 'Chapa de Contra Filé 400g', desc: '400g de contra filé, 200g de batata frita c/ queijo e bacon e 200g de mandioca cozida na manteiga de garrafa', price: 75, image: IMAGES.dishChapa1 },
       { id: 70, name: 'Chapa de Contra Filé 800g', desc: '800g de contra filé, 300g de batata frita c/ queijo e bacon e 300g de mandioca cozida na manteiga de garrafa', price: 140, image: IMAGES.dishChapa1 },
     ],
@@ -332,8 +340,12 @@ const sections = [
         { label: 'Uva', price: 0 },
         { label: 'Manga', price: 0 },
         { label: 'Goiaba', price: 0 },
-        { label: 'Maracujá', price: 0 },
+        { label: 'Maracujá', price: 8 },
       ]},
+      { id: 307, name: 'Água Mineral Sem Gás', desc: 'Água mineral', price: 5, image: IMAGES.dishAgua },
+      { id: 308, name: 'Água Mineral Com Gás', desc: 'Água mineral com gás', price: 5, image: IMAGES.dishAguaComGas },
+      { id: 310, name: 'Red Bull', desc: 'Energético 250ml', price: 15, image: IMAGES.dishRedBull },
+      { id: 311, name: 'Monster', desc: 'Energético 473ml', price: 15, image: IMAGES.dishMonster },
     ],
   },
   {
@@ -341,39 +353,41 @@ const sections = [
     image: IMAGES.bannerCervejas,
     items: [
       { id: 400, name: 'Brahma', desc: 'Cerveja Pilsen', price: 0, image: IMAGES.dishBrahma, variantLabel: 'Escolha o formato', variants: [
-        { label: 'Lata 350ml', price: 0 },
-        { label: 'Long Neck 600ml', price: 0 },
+        { label: 'Lata 350ml', price: 10 },
+        { label: 'Long Neck 600ml', price: 10 },
       ]},
       { id: 401, name: 'Heineken', desc: 'Cerveja Pilsen premium', price: 0, image: IMAGES.dishHeineken, variantLabel: 'Escolha o formato', variants: [
-        { label: 'Lata 350ml', price: 0 },
-        { label: 'Long Neck 600ml', price: 0 },
+        { label: 'Lata 350ml', price: 10 },
+        { label: 'Long Neck 600ml', price: 10 },
       ]},
       { id: 402, name: 'Stella Artois', desc: 'Cerveja Pilsen premium', price: 0, image: IMAGES.dishStella, variantLabel: 'Escolha o formato', variants: [
-        { label: 'Lata 350ml', price: 0 },
-        { label: 'Long Neck 600ml', price: 0 },
+        { label: 'Lata 350ml', price: 10 },
+        { label: 'Long Neck 600ml', price: 12 },
       ]},
       { id: 403, name: 'Skol', desc: 'Cerveja Pilsen', price: 0, image: IMAGES.dishSkol, variantLabel: 'Escolha o formato', variants: [
-        { label: 'Lata 350ml', price: 0 },
-        { label: 'Long Neck 600ml', price: 0 },
+        { label: 'Lata 350ml', price: 10 },
+        { label: 'Long Neck 600ml', price: 10 },
       ]},
       { id: 404, name: 'Skol Beats', desc: 'Bebida alcoólica mista saborizada', price: 0, image: IMAGES.dishSkolBeats, variantLabel: 'Escolha o sabor', variants: [
-        { label: 'Red Mix - Lata 269ml', price: 0 },
-        { label: 'Red Mix - Long Neck 600ml', price: 0 },
-        { label: 'GT (Gin & Tônica) - Lata 269ml', price: 0 },
-        { label: 'GT (Gin & Tônica) - Long Neck 600ml', price: 0 },
+        { label: 'Red Mix - Lata 269ml', price: 10 },
+        { label: 'Red Mix - Long Neck 600ml', price: 15 },
+        { label: 'GT (Gin & Tônica) - Lata 269ml', price: 10 },
+        { label: 'GT (Gin & Tônica) - Long Neck 600ml', price: 15 },
       ]},
       { id: 405, name: 'Antarctica Original', desc: 'Cerveja Pilsen tradicional', price: 0, image: IMAGES.dishAntarctica, variantLabel: 'Escolha o formato', variants: [
-        { label: 'Lata 350ml', price: 0 },
-        { label: 'Long Neck 600ml', price: 0 },
+        { label: 'Lata 350ml', price: 10 },
+        { label: 'Long Neck 600ml', price: 10 },
       ]},
       { id: 406, name: 'Budweiser', desc: 'Cerveja Premium American Lager', price: 0, image: IMAGES.dishBudweiser, variantLabel: 'Escolha o formato', variants: [
-        { label: 'Lata 350ml', price: 0 },
-        { label: 'Long Neck 600ml', price: 0 },
+        { label: 'Lata 350ml', price: 10 },
+        { label: 'Long Neck 600ml', price: 12 },
       ]},
       { id: 407, name: 'Corona', desc: 'Cerveja Premium tipo Lager', price: 0, image: IMAGES.dishCorona, variantLabel: 'Escolha o formato', variants: [
-        { label: 'Lata 350ml', price: 0 },
-        { label: 'Long Neck 600ml', price: 0 },
+        { label: 'Lata 350ml', price: 12 },
+        { label: 'Long Neck 600ml', price: 12 },
       ]},
+      { id: 408, name: 'Ice Cabaré', desc: 'Bebida alcoólica', price: 15, image: IMAGES.dishIceCabare },
+      { id: 409, name: 'Ice Syn', desc: 'Bebida alcoólica', price: 8, image: IMAGES.dishIceSyn },
     ],
   },
   {
@@ -397,8 +411,8 @@ const sections = [
       { id: 507, name: "Gilbe's Gin", desc: 'Gin', price: 13, image: IMAGES.dishGilbes },
       { id: 517, name: 'Bombay', desc: 'Gin', price: 20, image: IMAGES.dishBombay },
       // Tequila
-      { id: 518, name: 'José Cuervo', desc: 'Tequila', price: 0, image: IMAGES.dishJoseCuervo },
-      { id: 519, name: 'El Loco', desc: 'Tequila', price: 0, image: IMAGES.dishElLoco },
+      { id: 518, name: 'José Cuervo', desc: 'Tequila', price: 20, image: IMAGES.dishJoseCuervo },
+      { id: 519, name: 'El Loco', desc: 'Tequila', price: 10, image: IMAGES.dishElLoco },
       // Outros
       { id: 512, name: 'Licor 43', desc: 'Licor', price: 23, image: IMAGES.dishLicor43 },
       { id: 513, name: 'Campari', desc: 'Aperitivo', price: 15, image: IMAGES.dishCampari },
@@ -408,7 +422,7 @@ const sections = [
       { id: 523, name: 'Smirnoff', desc: 'Vodka', price: 15, image: IMAGES.dishSmirnoff },
       { id: 524, name: 'Orloff', desc: 'Vodka', price: 10, image: IMAGES.dishOrloff },
       // Vermute
-      { id: 520, name: 'Martini', desc: 'Vermute', price: 0, image: IMAGES.dishMartini },
+      { id: 520, name: 'Martini', desc: 'Vermute', price: 15, image: IMAGES.dishMartini },
     ],
   },
   {
@@ -442,13 +456,13 @@ const sections = [
       { id: 113, name: 'Sunset Spritz (Aperol)', desc: 'Gin 50ml · Tônica 100ml · Aperol 30ml · Rodela de Laranja · Gelo', price: 35, image: IMAGES.dishSunsetAperol },
       { id: 117, name: 'Gin Rickey', desc: 'Gin 50ml · Suco de Limão 25ml · Água com Gás · Gelo', price: 30, image: IMAGES.dishGinRickey },
       { id: 119, name: 'Gin e Lemon', desc: 'Gin 50ml · Soda Limonada 100ml · Gelo', price: 30, image: IMAGES.dishGinLemon },
-      { id: 121, name: 'Capi Vodka', desc: 'Vodka 50ml · Limão · Açúcar · Gelo', price: 0, image: IMAGES.dishCapiVodka },
-      { id: 122, name: 'Pina Colada', desc: 'Rum Branco 50ml · Suco de Abacaxi · Leite de Coco · Gelo', price: 0, image: IMAGES.dishPinaColada },
-      { id: 124, name: 'Sex on the Beach', desc: 'Vodka 50ml · Licor de Pêssego · Suco de Laranja · Suco de Cranberry · Gelo', price: 0, image: IMAGES.dishSexOnTheBeach },
-      { id: 107, name: 'Negroni', desc: 'Gin 30ml · Campari 30ml · Vermute Rosso 30ml · Casca de Laranja', price: 0, image: IMAGES.dishNegroni },
-      { id: 120, name: 'Dry Martini', desc: 'gin, vermute seco', price: 0, image: IMAGES.dishDryMartini },
-      { id: 125, name: 'Canarinho', desc: 'Vodka · Xarope de Caramelo · Maracujá · Limão Taiti', price: 0, image: IMAGES.dishCanarinho },
-      { id: 126, name: 'Cuba', desc: 'Bacardi · Coca-Cola · Gelo', price: 0, image: IMAGES.dishCuba },
+      { id: 121, name: 'Capi Vodka', desc: 'Vodka 50ml · Limão · Açúcar · Gelo', price: 25, image: IMAGES.dishCapiVodka },
+      { id: 122, name: 'Pina Colada', desc: 'Rum Branco 50ml · Suco de Abacaxi · Leite de Coco · Gelo', price: 25, image: IMAGES.dishPinaColada },
+      { id: 124, name: 'Sex on the Beach', desc: 'Vodka 50ml · Licor de Pêssego · Suco de Laranja · Suco de Cranberry · Gelo', price: 25, image: IMAGES.dishSexOnTheBeach },
+      { id: 107, name: 'Negroni', desc: 'Gin 30ml · Campari 30ml · Vermute Rosso 30ml · Casca de Laranja', price: 35, image: IMAGES.dishNegroni },
+      { id: 120, name: 'Dry Martini', desc: 'gin, vermute seco', price: 10, image: IMAGES.dishDryMartini },
+      { id: 125, name: 'Canarinho', desc: 'Vodka · Xarope de Caramelo · Maracujá · Limão Taiti', price: 25, image: IMAGES.dishCanarinho },
+      { id: 126, name: 'Cuba', desc: 'Bacardi · Coca-Cola · Gelo', price: 15, image: IMAGES.dishCuba },
     ],
   },
 ];
@@ -490,8 +504,8 @@ export const MENU_DISPLAY = [
         variants: [
           { label: '400g', price: 120 },
           { label: '600g', price: 150 },
-          { label: '800g', price: 200 },
-          { label: '1kg', price: 250 },
+          { label: '800g', price: 190 },
+          { label: '1kg', price: 220 },
         ],
       },
       {
@@ -590,8 +604,8 @@ export const MENU_DISPLAY = [
         price: 0,
         variantLabel: '2 opções',
         variants: [
-          { label: 'Completa', desc: 'Arroz, tropeiro, batata frita, vinagrete, maionese, farofa de manteiga e banana da terra', price: 0 },
-          { label: 'Tradicional', desc: 'Vinagrete e farofa', price: 0 },
+          { label: 'Completa', desc: 'Arroz, tropeiro, batata frita, vinagrete, maionese, farofa de manteiga e banana da terra', price: 180 },
+          { label: 'Tradicional', desc: 'Vinagrete e farofa', price: 140 },
         ],
       },
       {
@@ -602,8 +616,8 @@ export const MENU_DISPLAY = [
         price: 0,
         variantLabel: '2 opções',
         variants: [
-          { label: 'Completo', desc: 'Arroz, tropeiro, batata frita, vinagrete, maionese, farofa de manteiga e banana da terra', price: 0 },
-          { label: 'Tradicional', desc: 'Vinagrete e farofa', price: 0 },
+          { label: 'Completo', desc: 'Arroz, tropeiro, batata frita, vinagrete, maionese, farofa de manteiga e banana da terra', price: 95 },
+          { label: 'Tradicional', desc: 'Vinagrete e farofa', price: 70 },
         ],
       },
       {
@@ -614,8 +628,8 @@ export const MENU_DISPLAY = [
         price: 0,
         variantLabel: '2 opções',
         variants: [
-          { label: 'Completo', desc: 'Arroz, tropeiro, batata frita, vinagrete, maionese, farofa de manteiga e banana da terra', price: 0 },
-          { label: 'Tradicional', desc: 'Vinagrete e farofa', price: 0 },
+          { label: 'Completo', desc: 'Arroz, tropeiro, batata frita, vinagrete, maionese, farofa de manteiga e banana da terra', price: 180 },
+          { label: 'Tradicional', desc: 'Vinagrete e farofa', price: 140 },
         ],
       },
       {
@@ -626,8 +640,8 @@ export const MENU_DISPLAY = [
         price: 0,
         variantLabel: '2 opções',
         variants: [
-          { label: 'Completa', desc: 'Arroz, tropeiro, batata frita, vinagrete, maionese, farofa de manteiga e banana da terra', price: 0 },
-          { label: 'Tradicional', desc: 'Vinagrete e farofa', price: 0 },
+          { label: 'Completa', desc: 'Arroz, tropeiro, batata frita, vinagrete, maionese, farofa de manteiga e banana da terra', price: 180 },
+          { label: 'Tradicional', desc: 'Vinagrete e farofa', price: 140 },
         ],
       },
     ],
@@ -668,7 +682,10 @@ export const MENU_DISPLAY = [
         desc: 'Torresmo pururuca crocante com mandioca cozida na manteiga',
         image: IMAGES.dishTorresmoNovo,
         price: 0,
-        price: 40,
+        variants: [
+          { label: 'Meia', price: 20 },
+          { label: 'Inteira', price: 40 },
+        ]
       },
       {
         id: 'fritas',
