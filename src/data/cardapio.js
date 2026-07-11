@@ -231,12 +231,12 @@ const sections = [
       { id: 45, name: 'Linguiça', desc: '400g de linguiça, 200g de fritas e 200g de mandioca cozida na manteiga', price: 35, image: IMAGES.dishLinguicaPorcao, bgSize: '160%' },
       { id: 47, name: 'Isca de Tilápia', desc: 'Filé de tilápia empanado com fritas', price: 70, image: IMAGES.dishTilapiaFrita },
       { id: 48, name: 'Torresmo de Rolo', desc: 'Crocante com geleia de pimenta e aperitivos', price: 50, image: IMAGES.dishTorresmoRolo },
-      { id: 69, name: 'Torresmo com Mandioca', desc: '400g inteiro', price: 40, image: IMAGES.dishTorresmoNovo },
+      { id: 69, name: 'Torresmo com Mandioca', desc: '400g de torresmo com 400g de mandioca frita', price: 40, image: IMAGES.dishTorresmoNovo },
       { id: 50, name: 'Fritas', desc: '400g de batata frita crocante e sequinha', price: 20, image: IMAGES.dishFritasPuras },
       { id: 53, name: 'Fritas com Cheddar e Bacon', desc: '400g de batata frita com cheddar e bacon crocante', price: 35, image: IMAGES.dishFritasQueijoBacon },
       { id: 73, name: 'Calabresa 400g', desc: 'Calabresa acebolada', price: 30, image: IMAGES.dishCalabresa },
       { id: 77, name: 'Calabresa com Fritas', desc: 'Calabresa acebolada com fritas', price: 45, image: IMAGES.dishCalabresa },
-      { id: 79, name: 'Macaxeira', desc: 'Carne de sol com mandioca cozida na manteiga', price: 70, image: IMAGES.dishMacaxeira },
+      { id: 79, name: 'Macaxeira', desc: 'Carne de sol frita com mandioca', price: 70, image: IMAGES.dishMacaxeira },
     ],
   },
   {
@@ -679,7 +679,7 @@ export const MENU_DISPLAY = [
       {
         id: 'torresmo-mandioca',
         name: 'Torresmo com Mandioca',
-        desc: 'Torresmo pururuca crocante com mandioca cozida na manteiga',
+        desc: '400g de torresmo com 400g de mandioca frita',
         image: IMAGES.dishTorresmoNovo,
         price: 0,
         variants: [
@@ -711,7 +711,7 @@ export const MENU_DISPLAY = [
           { label: 'Calabresa com Fritas', price: 45 },
         ],
       },
-      { id: 79, name: 'Macaxeira', desc: 'Carne de sol com mandioca cozida na manteiga', price: 70, image: IMAGES.dishMacaxeira },
+      { id: 79, name: 'Macaxeira', desc: 'Carne de sol frita com mandioca', price: 70, image: IMAGES.dishMacaxeira },
     ],
   },
   {
