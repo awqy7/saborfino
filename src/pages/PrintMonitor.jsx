@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { connect, disconnect, splitAndPrint, getStatus, onStatusChange } from '../lib/printer';
-import { Bluetooth, BluetoothConnected, Printer, CheckCircle, X, AlertCircle, Clock } from 'lucide-react';
+import { Bluetooth, BluetoothConnected, Printer, AlertCircle, Clock } from 'lucide-react';
 
 const STATIONS = [
   { id: 'kitchen', label: 'Cozinha', icon: 'K', color: '#22c55e' },
@@ -31,8 +31,8 @@ function StationCard({ station, onLog }) {
       await connect(station.id);
       onLog(`${station.label}: Impressora conectada!`, 'success');
     } catch (err) {
-      setError(err.message || 'Falha ao conectar');
-      onLog(`${station.label}: ${err.message || 'Falha ao conectar'}`, 'error');
+      setError('Falha ao conectar');
+      onLog(`${station.label}: Falha ao conectar`, 'error');
     } finally {
       setConnecting(false);
     }
@@ -107,18 +107,66 @@ const PrintMonitor = () => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
 
+  function getNewItems(oldItens, newItens) {
+    const oldQty = {};
+    (oldItens || []).forEach(i => {
+      const key = i.cartKey || `${i.id}-${i.name}`;
+      oldQty[key] = (oldQty[key] || 0) + (i.quantity || 1);
+    });
+
+    const newQty = {};
+    (newItens || []).forEach(i => {
+      const key = i.cartKey || `${i.id}-${i.name}`;
+      newQty[key] = (newQty[key] || 0) + (i.quantity || 1);
+    });
+
+    const result = [];
+    const handled = new Set();
+    (newItens || []).forEach(i => {
+      const key = i.cartKey || `${i.id}-${i.name}`;
+      if (handled.has(key)) return;
+      handled.add(key);
+      const diff = (newQty[key] || 0) - (oldQty[key] || 0);
+      if (diff > 0) {
+        result.push({ ...i, quantity: diff });
+      }
+    });
+
+    return result;
+  }
+
   useEffect(() => {
     const channel = supabase.channel('print-monitor')
       .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'pedidos', filter: 'status=eq.preparando' },
+        { event: 'INSERT', schema: 'public', table: 'pedidos', filter: 'status=eq.pendente' },
         async (payload) => {
           const order = payload.new;
-          addLog(`Pedido detectado: Mesa ${order.mesa || 'Balcão'} — ${order.cliente_nome || '?'}`, 'info');
+          addLog(`Novo pedido: Mesa ${order.mesa || 'Balcão'}`, 'info');
           try {
             await splitAndPrint(order);
-            addLog(`Impresso com sucesso!`, 'success');
+            addLog(`Impresso!`, 'success');
           } catch (err) {
-            addLog(`Erro ao imprimir: ${err.message}`, 'error');
+            addLog('Erro ao imprimir', 'error');
+          }
+        }
+      )
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'pedidos' },
+        async (payload) => {
+          const { old: oldOrder, new: newOrder } = payload;
+          if (oldOrder.status !== newOrder.status) return;
+          if (!oldOrder.itens || !newOrder.itens) return;
+          if (oldOrder.itens.length > newOrder.itens.length) return;
+
+          const added = getNewItems(oldOrder.itens, newOrder.itens);
+          if (added.length === 0) return;
+
+          addLog(`Adição: Mesa ${newOrder.mesa} (${added.length} item(ns))`, 'info');
+          try {
+            await splitAndPrint({ ...newOrder, itens: added, total: 0 });
+            addLog(`Impresso!`, 'success');
+          } catch (err) {
+            addLog('Erro ao imprimir', 'error');
           }
         }
       )

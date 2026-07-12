@@ -63,14 +63,14 @@ const Dashboard = () => {
         { data: ativos },
         { data: recentes },
       ] = await Promise.all([
-        supabase.from('pedidos').select('total, cliente_nome').gte('created_at', start).lte('created_at', end),
-        supabase.from('pedidos').select('id').in('status', ['pendente', 'preparando']),
-        supabase.from('pedidos').select('*').not('status', 'in', '(' + ['pago', 'cancelado'].map(s => `'${s}'`).join(',') + ')').order('created_at', { ascending: false }).limit(5),
+        supabase.from('pedidos').select('total, mesa, status').gte('created_at', start).lte('created_at', end),
+        supabase.from('pedidos').select('id').eq('status', 'pendente'),
+        supabase.from('pedidos').select('*').not('status', 'eq', 'pago').order('created_at', { ascending: false }).limit(5),
       ]);
 
-      const paidHoje = (hoje || []).filter(o => o.status !== 'cancelado');
+      const paidHoje = (hoje || []).filter(o => o.status === 'pago' || o.status === 'pendente');
       const totalVendas = paidHoje.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
-      const clientesSet = new Set(paidHoje.map(o => o.cliente_nome).filter(Boolean));
+      const mesasHoje = new Set(paidHoje.map(o => o.mesa).filter(Boolean));
       const ticket = paidHoje.length > 0 ? totalVendas / paidHoje.length : 0;
 
       const limiteData = new Date(); limiteData.setDate(limiteData.getDate() - 30);
@@ -79,7 +79,7 @@ const Dashboard = () => {
         .select('itens')
         .gte('created_at', limiteData.toISOString())
         .limit(500);
-      if (ordErr) console.error('Erro topItems:', ordErr);
+      if (ordErr) {} // silencioso
 
       const itemCount = {};
       (allOrders || []).forEach(o => {
@@ -95,7 +95,7 @@ const Dashboard = () => {
 
       const recentOrders = (recentes || []).map(o => {
         const diff = Math.floor((Date.now() - new Date(o.created_at).getTime()) / 60000);
-        const statusMap = { 'pendente': 'Pendente', 'preparando': 'Preparando', 'pronto': 'Pronto' };
+        const statusMap = { 'pendente': 'Pendente', 'pago': 'Pago' };
         return {
           id: o.id,
           mesa: o.mesa || o.tipo,
@@ -108,14 +108,14 @@ const Dashboard = () => {
       setData({
         vendasHoje: totalVendas,
         pedidosAtivos: (ativos || []).length,
-        clientesHoje: clientesSet.size,
+        clientesHoje: mesasHoje.size,
         ticketMedio: ticket,
         recentOrders,
         topItems,
       });
       setError(false);
     } catch (err) {
-      console.error('Erro ao carregar dashboard:', err);
+      // erro silencioso em produção
       setError(true);
     } finally {
       setLoading(false);
@@ -130,9 +130,8 @@ const Dashboard = () => {
   ];
 
   const statusConfig = {
-    'Preparando': { cls: 'badge-warning', label: 'Preparando' },
     'Pendente': { cls: 'badge-info', label: 'Pendente' },
-    'Pronto': { cls: 'badge-success', label: 'Pronto' },
+    'Pago': { cls: 'badge-success', label: 'Pago' },
   };
 
   const formatTime = (isoString) => {
@@ -141,33 +140,8 @@ const Dashboard = () => {
   };
 
   return (
-    <div style={{ paddingBottom: '2rem' }}>
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="dash-header"
-        style={{ marginBottom: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
-      >
-        <div>
-          <h1 style={{ fontSize: '1.875rem', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '0.25rem' }}>
-            Bem-vindo de volta 👋
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Acompanhe as métricas do seu restaurante em tempo real
-          </p>
-        </div>
-        <div className="dash-header-actions" style={{ display: 'flex', gap: '0.75rem' }}>
-          <button className="btn btn-secondary btn-sm">
-            <Clock size={14} />
-            Hoje
-          </button>
-          <button className="btn btn-primary btn-sm" onClick={() => navigate('/app/pos')}>
-            Novo Pedido
-            <ArrowUpRight size={14} />
-          </button>
-        </div>
-      </motion.div>
+    <div style={{ padding: '1.5rem' }}>
+
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>Carregando...</div>

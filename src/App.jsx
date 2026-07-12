@@ -4,9 +4,8 @@ import HomeCardapio from './pages/HomeCardapio';
 import ErrorBoundary from './components/ErrorBoundary';
 
 const Login = lazy(() => import('./pages/Login'));
-const ClientMenu = lazy(() => import('./pages/ClientMenu'));
-const PrintMonitor = lazy(() => import('./pages/PrintMonitor'));
 const ProtectedLayout = lazy(() => import('./components/ProtectedLayout'));
+const ComandaView = lazy(() => import('./pages/ComandaView'));
 
 const LoadingFallback = () => (
   <div className="loading">
@@ -23,11 +22,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<HomeCardapio />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/order/:tableId" element={<ClientMenu />} />
-              <Route path="/order" element={<ClientMenu />} />
-              <Route path="/menu/:tableId" element={<Navigate to={({ params }) => `/order/${params.tableId}`} />} />
-              <Route path="/menu" element={<Navigate to="/order" />} />
-              <Route path="/print-monitor" element={<PrintMonitor />} />
+              <Route path="/comanda/:tableId" element={<ComandaView />} />
               <Route path="/app/*" element={<ProtectedLayout />} />
             </Routes>
           </Suspense>

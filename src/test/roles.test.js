@@ -77,7 +77,7 @@ describe('validation', () => {
     const validOrder = {
       mesa: '1',
       tipo: 'mesa',
-      cliente_nome: 'João',
+
       itens: [{ name: 'X-Burger', price: 25, quantity: 2, category: 'Chapas', cartKey: '1' }],
       total: 50
     }
@@ -86,7 +86,7 @@ describe('validation', () => {
     const invalidOrder = {
       mesa: '',
       tipo: 'mesa',
-      cliente_nome: '',
+
       itens: [],
       total: 0
     }

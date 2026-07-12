@@ -22,7 +22,7 @@ const Sidebar = ({ role, sidebarOpen, onClose }) => {
     try {
       await supabase.auth.signOut();
     } catch (err) {
-      console.error('Logout error:', err);
+      // erro silencioso em produção
     }
     navigate('/');
   };

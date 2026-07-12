@@ -1,9 +1,9 @@
 const FOOD_CATEGORIES = ['Chapas', 'Espetos 500g/1kg', 'Porções', 'Entradas', 'Espetinhos', 'Guarnições', 'Pães de Alho'];
-const DRINK_CATEGORIES = ['Drinks', 'Bebidas'];
+const DRINK_CATEGORIES = ['Bebidas', 'Cervejas', 'Drinks', 'Doses', 'Vinhos'];
 
 const LABELS = {
-  kitchen: { name: 'COZINHA', icon: 'K' },
-  bar: { name: 'BAR', icon: 'B' },
+  cozinha: { name: 'COZINHA', icon: 'K' },
+  barcaixa: { name: 'BAR & DRINKS', icon: 'B' },
 };
 
 function createStation() {
@@ -11,13 +11,13 @@ function createStation() {
 }
 
 const stations = {
-  kitchen: createStation(),
-  bar: createStation(),
+  cozinha: createStation(),
+  barcaixa: createStation(),
 };
 
 function getStationForItem(item) {
-  if (DRINK_CATEGORIES.includes(item?.category)) return 'bar';
-  return 'kitchen';
+  if (FOOD_CATEGORIES.includes(item?.category)) return 'cozinha';
+  return 'barcaixa';
 }
 
 function getStatusFor(station) {
@@ -30,9 +30,10 @@ function notify(station) {
 
 export function splitOrder(order) {
   const items = order.itens || [];
-  const kitchen = items.filter(i => getStationForItem(i) === 'kitchen');
-  const bar = items.filter(i => getStationForItem(i) === 'bar');
-  return { kitchen, bar };
+  const cozinha = items.filter(i => getStationForItem(i) === 'cozinha');
+  const barcaixa = items.filter(i => getStationForItem(i) === 'barcaixa' && i.serving_time === 'now');
+  const pendingFood = items.filter(i => getStationForItem(i) === 'barcaixa' && i.serving_time === 'with_food');
+  return { cozinha, barcaixa, pendingFood };
 }
 
 export function getStatus(station) {
@@ -52,12 +53,12 @@ export async function connect(station) {
   const s = stations[station];
   if (!s) throw new Error(`Estação inválida: ${station}`);
   if (!navigator.serial) throw new Error('Web Serial API não disponível. Use Chrome ou Edge.');
-  if (s.port) throw new Error(`Impressora da ${LABELS[station]?.name || station} já está conectada`);
+  if (s.port) throw new Error(`Impressora ${LABELS[station]?.name || station} já está conectada`);
   try {
     const selected = await navigator.serial.requestPort();
     for (const [key, st] of Object.entries(stations)) {
       if (key !== station && st.port && st.port === selected) {
-        throw new Error(`Esta porta já está em uso pela estação ${LABELS[key]?.name || key}. Desconecte-a primeiro.`);
+        throw new Error(`Porta já em uso por ${LABELS[key]?.name || key}. Desconecte-a primeiro.`);
       }
     }
     await selected.open({ baudRate: 9600, dataBits: 8, stopBits: 1, parity: 'none' });
@@ -83,7 +84,7 @@ export async function disconnect(station) {
 export async function printOrder(order, station) {
   const s = stations[station];
   if (!s) throw new Error(`Estação inválida: ${station}`);
-  if (!s.port) throw new Error(`Impressora da ${LABELS[station]?.name || station} não conectada`);
+  if (!s.port) throw new Error(`Impressora ${LABELS[station]?.name || station} não conectada`);
   return new Promise((resolve, reject) => {
     s.queue.push({ order, resolve, reject });
     processQueue(station);
@@ -91,14 +92,23 @@ export async function printOrder(order, station) {
 }
 
 export async function splitAndPrint(order) {
-  const { kitchen, bar } = splitOrder(order);
+  const { cozinha, barcaixa, pendingFood } = splitOrder(order);
+
   const promises = [];
-  if (kitchen.length > 0 && stations.kitchen.port) {
-    promises.push(printOrder({ ...order, itens: kitchen }, 'kitchen').catch(() => {}));
+
+  if (cozinha.length > 0 && stations.cozinha.port) {
+    const cozinhaOrder = {
+      ...order,
+      itens: cozinha,
+      pendingFood,
+    };
+    promises.push(printOrder(cozinhaOrder, 'cozinha').catch(() => {}));
   }
-  if (bar.length > 0 && stations.bar.port) {
-    promises.push(printOrder({ ...order, itens: bar }, 'bar').catch(() => {}));
+
+  if (barcaixa.length > 0 && stations.barcaixa.port) {
+    promises.push(printOrder({ ...order, itens: barcaixa }, 'barcaixa').catch(() => {}));
   }
+
   await Promise.allSettled(promises);
 }
 
@@ -150,7 +160,7 @@ function buildReceipt(order, station) {
     cut: [GS, 0x56, 0x00],
   };
 
-  const label = LABELS[station]?.name || station.toUpperCase();
+  const label = LABELS[station]?.name || 'SABOR FINO';
   const buf = [];
   const S = '-'.repeat(32);
 
@@ -161,8 +171,8 @@ function buildReceipt(order, station) {
   buf.push(txt('FINO SABOR\n'));
   buf.push(txt('\n'));
   buf.push(C.left);
-  buf.push(txt(`Pedido: ${(order.id || '').toString().slice(0, 8)}    Mesa: ${order.mesa || 'Balcão'}\n`));
-  buf.push(txt(`Cliente: ${order.cliente_nome || ''}\n`));
+  buf.push(txt(`MESA ${order.mesa || 'BALCAO'}\n`));
+  buf.push(txt(`#${(order.id || '').toString().slice(0, 8)}\n`));
   buf.push(txt(new Date().toLocaleString('pt-BR') + '\n'));
   buf.push(txt(S + '\n'));
 
@@ -170,14 +180,19 @@ function buildReceipt(order, station) {
   itens.forEach(item => {
     const name = item.quantity != null ? `${item.quantity}x ${item.name}` : item.name;
     buf.push(txt(name + '\n'));
-    if (item.desc && item.desc.trim() && item.category !== 'Drinks') {
-      const desc = item.desc.trim();
-      const i = desc.lastIndexOf(' e ');
-      const normalized = i !== -1 ? desc.slice(0, i) + ',' + desc.slice(i + 2) : desc;
-      const parts = normalized.split(',').map(s => s.trim()).filter(Boolean);
-      parts.forEach(p => buf.push(txt('  ' + p + '\n')));
+    if (item.observacao) {
+      buf.push(txt('  Obs: ' + item.observacao + '\n'));
     }
   });
+
+  if (order.pendingFood && order.pendingFood.length > 0 && station === 'cozinha') {
+    buf.push(txt(S + '\n'));
+    buf.push(txt('P/ ENTREGAR:\n'));
+    order.pendingFood.forEach(item => {
+      const name = item.quantity != null ? `  ${item.quantity}x ${item.name}` : `  ${item.name}`;
+      buf.push(txt(name + '\n'));
+    });
+  }
 
   if (order.observacao) {
     buf.push(txt('\nObs: ' + order.observacao + '\n'));

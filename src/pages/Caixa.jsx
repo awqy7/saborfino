@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { formatPrice } from '../lib/format';
 import { 
@@ -14,7 +14,11 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
-  X
+  X,
+  Divide,
+  Users,
+  Plus,
+  Minus,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -33,6 +37,10 @@ const Caixa = () => {
   const [payingIds, setPayingIds] = useState(new Set());
   const [dateFilter, setDateFilter] = useState('hoje');
   const [expandedOrder, setExpandedOrder] = useState(null);
+  const [splitModal, setSplitModal] = useState(null);
+  const [splitMode, setSplitMode] = useState('igual');
+  const [splitPeople, setSplitPeople] = useState(2);
+  const [splitPersonItems, setSplitPersonItems] = useState({});
 
   useEffect(() => {
     fetchOrders();
@@ -63,28 +71,90 @@ const Caixa = () => {
       if (error) throw error;
       setOrders(data || []);
     } catch (error) {
-      console.error('Erro ao buscar pedidos do caixa:', error);
+      // erro silencioso em produção
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePagar = async (id, method) => {
+  const lastPayRef = useRef(0);
+  const PAY_COOLDOWN = 2000;
+
+  const handlePagar = async (id) => {
     if (payingIds.has(id)) return;
+    const now = Date.now();
+    if (now - lastPayRef.current < PAY_COOLDOWN) return;
+    lastPayRef.current = now;
     setPayingIds(prev => new Set(prev).add(id));
     try {
       const { error } = await supabase
         .from('pedidos')
-        .update({ status: 'pago', metodo_pagamento: method })
-        .eq('id', id);
+        .update({ status: 'pago' })
+        .eq('id', id)
+        .neq('status', 'pago');
 
       if (error) throw error;
-    } catch (error) {
-      console.error('Erro ao registrar pagamento:', error);
+    } catch {
       alert('Erro ao registrar pagamento');
     } finally {
       setPayingIds(prev => { const next = new Set(prev); next.delete(id); return next; });
     }
+  };
+
+  const handleOpenSplit = (order) => {
+    setSplitModal(order);
+    setSplitMode('igual');
+    setSplitPeople(2);
+    const items = order.itens || [];
+    const perPerson = {};
+    items.forEach((item, idx) => {
+      perPerson[idx] = 'A';
+    });
+    setSplitPersonItems(perPerson);
+  };
+
+  const handleSplitPay = async (person) => {
+    if (!splitModal || payingIds.has(splitModal.id)) return;
+    setPayingIds(prev => new Set(prev).add(splitModal.id));
+    try {
+      await supabase
+        .from('pedidos')
+        .update({ status: 'pago' })
+        .eq('id', splitModal.id)
+        .neq('status', 'pago');
+      setSplitModal(null);
+    } catch {
+      alert('Erro ao registrar pagamento');
+    } finally {
+      setPayingIds(prev => { const next = new Set(prev); next.delete(splitModal.id); return next; });
+    }
+  };
+
+  const handleSplitItemPerson = (itemIdx, person) => {
+    setSplitPersonItems(prev => ({ ...prev, [itemIdx]: person }));
+  };
+
+  const getSplitTotals = () => {
+    if (!splitModal) return {};
+    const itens = splitModal.itens || [];
+    if (splitMode === 'igual') {
+      const total = Number(splitModal.total) || 0;
+      const perPerson = total / splitPeople;
+      const persons = {};
+      for (let i = 0; i < splitPeople; i++) {
+        const label = String.fromCharCode(65 + i);
+        persons[label] = { items: [], subtotal: perPerson };
+      }
+      return persons;
+    }
+    const persons = {};
+    itens.forEach((item, idx) => {
+      const person = splitPersonItems[idx] || 'A';
+      if (!persons[person]) persons[person] = { items: [], subtotal: 0 };
+      persons[person].items.push(item);
+      persons[person].subtotal += (item.price || 0) * (item.quantity || 1);
+    });
+    return persons;
   };
 
   const formatTime = (isoString) => {
@@ -109,7 +179,7 @@ const Caixa = () => {
 
   // Filter based on active tab, search, and date
   const displayedOrders = orders.filter(tx => {
-    const isAberto = activeTab === 'Em Aberto' && tx.status !== 'pago' && tx.status !== 'cancelado';
+    const isAberto = activeTab === 'Em Aberto' && tx.status !== 'pago';
     const isPago = activeTab === 'Fechados' && tx.status === 'pago';
 
     if (!isAberto && !isPago) return false;
@@ -123,13 +193,12 @@ const Caixa = () => {
     const term = searchTerm.toLowerCase();
     const searchMatch = 
       (tx.mesa && tx.mesa.toLowerCase().includes(term)) ||
-      (tx.cliente_nome && tx.cliente_nome.toLowerCase().includes(term)) ||
       String(tx.id).toLowerCase().includes(term);
 
     return searchMatch;
   });
 
-  const totalEmAberto = orders.filter(o => o.status !== 'pago' && o.status !== 'cancelado').reduce((acc, o) => acc + (Number(o.total) || 0), 0);
+  const totalEmAberto = orders.filter(o => o.status !== 'pago').reduce((acc, o) => acc + (Number(o.total) || 0), 0);
   const totalFechadosPeriodo = displayedOrders.filter(o => o.status === 'pago').reduce((acc, o) => acc + (Number(o.total) || 0), 0);
   
   const summaryCards = [
@@ -140,9 +209,8 @@ const Caixa = () => {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'pendente': return <span className="badge" style={{ background: '#fef3c7', color: '#b45309' }}>Na Fila</span>;
-      case 'preparando': return <span className="badge" style={{ background: '#e0e7ff', color: '#4338ca' }}>Cozinha</span>;
-      case 'pronto': return <span className="badge badge-success" style={{ background: '#d1fae5', color: '#059669' }}>Pronto</span>;
       case 'pago': return <span className="badge" style={{ background: '#f3f4f6', color: '#374151' }}>Pago</span>;
+
       default: return <span className="badge">{status}</span>;
     }
   };
@@ -292,7 +360,7 @@ const Caixa = () => {
                           Mesa {tx.mesa || tx.tipo}
                         </span>
                       </td>
-                      <td data-label="Cliente" style={{ fontWeight: 600, fontSize: '0.875rem' }}>{tx.cliente_nome || '-'}</td>
+                      <td data-label="Cliente" style={{ fontWeight: 600, fontSize: '0.875rem' }}>-</td>
                       <td data-label="Itens" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                         {tx.itens?.length || 0} itens
                       </td>
@@ -305,8 +373,11 @@ const Caixa = () => {
                       <td data-label="" style={{ textAlign: 'right' }}>
                         {activeTab === 'Em Aberto' ? (
                           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                            <button onClick={(e) => { e.stopPropagation(); handlePagar(tx.id, 'PIX'); }} disabled={payingIds.has(tx.id)} className="btn btn-primary btn-sm" title="Receber via PIX" style={{ padding: '0.5rem 0.85rem', background: '#10b981', gap: '0.4rem', opacity: payingIds.has(tx.id) ? 0.6 : 1 }}>
-                              <QrCode size={16} /> {payingIds.has(tx.id) ? '...' : 'Pagar'}
+                            <button onClick={(e) => { e.stopPropagation(); handlePagar(tx.id); }} disabled={payingIds.has(tx.id)} className="btn btn-primary btn-sm" title="Registrar pagamento" style={{ padding: '0.5rem 0.85rem', gap: '0.4rem', opacity: payingIds.has(tx.id) ? 0.6 : 1 }}>
+                              <CheckCircle size={16} /> {payingIds.has(tx.id) ? '...' : 'Pagar'}
+                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); handleOpenSplit(tx); }} className="btn btn-secondary btn-sm" style={{ padding: '0.5rem 0.65rem', gap: '0.3rem' }}>
+                              <Divide size={14} /> Dividir
                             </button>
                           </div>
                         ) : (
@@ -323,9 +394,7 @@ const Caixa = () => {
                           <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                               <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                <strong>Mesa:</strong> {tx.mesa || tx.tipo}
-                                {tx.cliente_nome && <> · <strong>Cliente:</strong> {tx.cliente_nome}</>}
-                                <> · <strong>Data:</strong> {formatDate(tx.created_at)} às {formatTime(tx.created_at)}</>
+                                <strong>Mesa:</strong> {tx.mesa || tx.tipo} · <strong>Data:</strong> {formatDate(tx.created_at)} às {formatTime(tx.created_at)}
                               </div>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -355,6 +424,173 @@ const Caixa = () => {
           </table>
         </div>
       </div>
+      {/* Split Bill Modal */}
+      {splitModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        }}
+          onClick={() => setSplitModal(null)}
+        >
+          <div style={{
+            width: '100%', maxWidth: '520px', maxHeight: '85vh',
+            background: 'var(--surface)', borderRadius: 'var(--radius-xl) var(--radius-xl) 0 0',
+            overflow: 'auto', padding: '1.5rem',
+          }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }}>
+                Dividir Conta — Mesa {splitModal.mesa}
+              </h3>
+              <button onClick={() => setSplitModal(null)} className="btn btn-ghost btn-sm" style={{ padding: '0.3rem' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Mode Tabs */}
+            <div style={{ display: 'flex', gap: '0.25rem', background: 'var(--surface-subtle)', padding: '0.25rem', borderRadius: 'var(--radius-md)', marginBottom: '1.25rem' }}>
+              <button
+                onClick={() => setSplitMode('igual')}
+                style={{
+                  flex: 1, padding: '0.5rem 1rem', border: 'none', borderRadius: 'calc(var(--radius-md) - 0.15rem)',
+                  background: splitMode === 'igual' ? 'var(--surface)' : 'transparent',
+                  fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+                  color: splitMode === 'igual' ? 'var(--text-primary)' : 'var(--text-muted)',
+                  boxShadow: splitMode === 'igual' ? 'var(--shadow-sm)' : 'none',
+                  fontFamily: 'inherit',
+                }}
+              >
+                <Users size={14} style={{ marginRight: '0.3rem', verticalAlign: 'middle' }} />
+                Igual
+              </button>
+              <button
+                onClick={() => setSplitMode('itens')}
+                style={{
+                  flex: 1, padding: '0.5rem 1rem', border: 'none', borderRadius: 'calc(var(--radius-md) - 0.15rem)',
+                  background: splitMode === 'itens' ? 'var(--surface)' : 'transparent',
+                  fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+                  color: splitMode === 'itens' ? 'var(--text-primary)' : 'var(--text-muted)',
+                  boxShadow: splitMode === 'itens' ? 'var(--shadow-sm)' : 'none',
+                  fontFamily: 'inherit',
+                }}
+              >
+                <Divide size={14} style={{ marginRight: '0.3rem', verticalAlign: 'middle' }} />
+                Por Itens
+              </button>
+            </div>
+
+            {splitMode === 'igual' && (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.5rem' }}>
+                  Número de pessoas
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <button
+                    onClick={() => setSplitPeople(p => Math.max(2, p - 1))}
+                    className="btn btn-secondary btn-sm"
+                    style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <span style={{ fontSize: '1.5rem', fontWeight: 800, minWidth: 40, textAlign: 'center' }}>
+                    {splitPeople}
+                  </span>
+                  <button
+                    onClick={() => setSplitPeople(p => Math.min(10, p + 1))}
+                    className="btn btn-secondary btn-sm"
+                    style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {splitMode === 'itens' && (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                  Clique em cada item para atribuir a uma pessoa
+                </p>
+                {(splitModal.itens || []).map((item, idx) => {
+                  const current = splitPersonItems[idx] || 'A';
+                  const persons = ['A', 'B', 'C', 'D'];
+                  return (
+                    <div key={idx} style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '0.6rem 0', borderBottom: '1px solid var(--border)',
+                    }}>
+                      <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                        {item.quantity}x {item.name} — {formatPrice((item.price || 0) * (item.quantity || 1))}
+                      </span>
+                      <div style={{ display: 'flex', gap: '0.25rem' }}>
+                        {persons.map(p => (
+                          <button
+                            key={p}
+                            onClick={() => handleSplitItemPerson(idx, p)}
+                            style={{
+                              width: 32, height: 32, borderRadius: 'var(--radius-full)',
+                              border: `2px solid ${current === p ? 'var(--primary)' : 'var(--border)'}`,
+                              background: current === p ? 'var(--primary-light)' : 'transparent',
+                              cursor: 'pointer', fontWeight: 800, fontSize: '0.8rem',
+                              color: current === p ? 'var(--primary)' : 'var(--text-muted)',
+                              fontFamily: 'inherit',
+                            }}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Split summary */}
+            {(() => {
+              const totals = getSplitTotals();
+              return (
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.75rem' }}>
+                    {splitMode === 'igual' ? `Divisão em ${splitPeople} partes:` : 'Divisão por pessoa:'}
+                  </h4>
+                  {Object.entries(totals).map(([person, data]) => (
+                    <div key={person} style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '0.6rem 0.75rem', marginBottom: '0.4rem',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'var(--surface-subtle)',
+                    }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>
+                        Pessoa {person}
+                      </span>
+                      <span style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--primary)' }}>
+                        {formatPrice(data.subtotal)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                Cobrar o total na maquininha externa e marcar como pago
+              </p>
+              <button
+                onClick={() => handleSplitPay()}
+                disabled={payingIds.has(splitModal.id)}
+                className="btn btn-primary"
+                style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', padding: '1rem' }}
+              >
+                <CheckCircle size={20} /> {payingIds.has(splitModal.id) ? '...' : 'Confirmar Pagamento'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

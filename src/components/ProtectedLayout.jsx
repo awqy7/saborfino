@@ -10,6 +10,7 @@ const Caixa = lazy(() => import('../pages/Caixa'));
 const Relatorios = lazy(() => import('../pages/Relatorios'));
 const Settings = lazy(() => import('../pages/Settings'));
 const Cozinha = lazy(() => import('../pages/Cozinha'));
+const PrintMonitor = lazy(() => import('../pages/PrintMonitor'));
 import { ShoppingCart, UtensilsCrossed, LayoutDashboard, Receipt, BarChart3, Settings as SettingsIcon } from 'lucide-react';
 
 const ProtectedLayout = () => {
@@ -48,7 +49,7 @@ const ProtectedLayout = () => {
           setRole(userRole);
         }
       } catch (err) {
-        console.error('ProtectedLayout init error:', err);
+        // erro silencioso em produção
       }
       setLoading(false);
     };
@@ -99,11 +100,11 @@ const ProtectedLayout = () => {
           </svg>
         </div>
         <span style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 600 }}>
-          Acesso não autorizado
+          Acesso não disponível
         </span>
         <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-          Seu usuário não possui permissão de acesso ao sistema.
-          <br />Entre em contato com o administrador.
+          Não foi possível carregar o sistema.
+          <br />Tente novamente mais tarde.
         </span>
         <button
           className="btn btn-secondary"
@@ -116,9 +117,21 @@ const ProtectedLayout = () => {
     );
   }
 
+  // Atendente: fullscreen POS, no sidebar, no bottom nav
+  if (role === ROLE_ATENDENTE) {
+    return (
+      <Suspense fallback={<div className="loading"><div className="loading-spinner" /></div>}>
+        <Routes>
+          <Route path="/pos" element={<POS />} />
+          <Route path="*" element={<Navigate to="/pos" replace />} />
+        </Routes>
+      </Suspense>
+    );
+  }
+
   const allowedRoutes = role === ROLE_ATENDENTE
     ? ['/pos', '/cozinha']
-    : ['/', '/pos', '/cozinha', '/caixa', '/relatorios', '/settings'];
+    : ['/', '/pos', '/cozinha', '/caixa', '/relatorios', '/settings', '/print-monitor'];
 
   const currentPath = location.pathname;
   const isAllowed = allowedRoutes.some(route => {
@@ -129,18 +142,6 @@ const ProtectedLayout = () => {
   if (currentPath.startsWith('/app') && !isAllowed) {
     return <Navigate to={`/app${allowedRoutes[0]}`} replace />;
   }
-
-  const getPageName = (path) => {
-    if (path === '/app' || path === '/app/') return 'Dashboard';
-    if (path.startsWith('/app/pos')) return 'Pedidos';
-    if (path.startsWith('/app/cozinha')) return 'Cozinha';
-    if (path.startsWith('/app/caixa')) return 'Caixa';
-    if (path.startsWith('/app/relatorios')) return 'Relatórios';
-    if (path.startsWith('/app/settings')) return 'Configurações';
-    return 'Sistema';
-  };
-
-  const pageName = getPageName(currentPath);
 
   const allNavItems = [
     { name: 'Dashboard', path: '/app', icon: LayoutDashboard, roles: [ROLE_DONO] },
@@ -158,7 +159,8 @@ const ProtectedLayout = () => {
       {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
       <Sidebar role={role} sidebarOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Mobile Bottom Nav with auto-hide on scroll */}
+      {/* Mobile Bottom Nav — hidden on POS screen */}
+      {!currentPath.includes('/pos') && (
       <nav className={`mobile-bottom-nav${navHidden ? ' mobile-bottom-nav-hidden' : ''}`}>
         {mobileNavItems.map(item => {
           const Icon = item.icon;
@@ -177,6 +179,7 @@ const ProtectedLayout = () => {
           );
         })}
       </nav>
+      )}
 
       <main className="main-content" ref={mainRef} onScroll={handleScroll}>
         <Suspense fallback={<div className="loading"><div className="loading-spinner" /></div>}>
@@ -189,8 +192,9 @@ const ProtectedLayout = () => {
                 <Route path="/settings" element={<Settings />} />
               </>
             )}
-            <Route path="/pos" element={<POS onToggleSidebar={() => setSidebarOpen(prev => !prev)} />} />
+            <Route path="/pos" element={<POS />} />
             <Route path="/cozinha" element={<Cozinha />} />
+            <Route path="/print-monitor" element={<PrintMonitor />} />
             <Route path="*" element={<Navigate to="/app" replace />} />
           </Routes>
         </Suspense>

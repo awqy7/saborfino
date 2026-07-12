@@ -12,7 +12,7 @@ export async function getUserRole(userId, email) {
       .maybeSingle();
 
     if (data) return data.role;
-    if (error) console.error('getUserRole fetch error:', error);
+    if (error) {} // silencioso em produção
     return null;
   } catch {
     return null;

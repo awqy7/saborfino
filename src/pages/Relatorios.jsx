@@ -78,8 +78,7 @@ const Relatorios = () => {
         .from('pedidos')
         .select('total, itens, created_at, status')
         .gte('created_at', start)
-        .lte('created_at', end)
-        .neq('status', 'cancelado');
+        .lte('created_at', end);
 
       if (!orders || orders.length === 0) {
         setData({ categorySales: [], weekRevenue: [], topProducts: [], totalOrders: 0, totalRevenue: 0, avgTicket: 0, busiestDay: null, maxRevenue: 1 });
@@ -153,7 +152,7 @@ const Relatorios = () => {
           maxRevenue,
         });
     } catch (err) {
-      console.error('Erro ao carregar relatórios:', err);
+      // erro silencioso em produção
     } finally {
       setLoading(false);
     }

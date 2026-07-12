@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { LogIn, Lock, Mail, UtensilsCrossed, Eye, EyeOff, ArrowLeft } from 'lucide-react';
@@ -12,32 +12,94 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [showPass, setShowPass] = useState(false);
+  const [loginCooldown, setLoginCooldown] = useState(0);
+  const cooldownTimer = useRef(null);
+
+  const getStoredAttempts = () => {
+    try {
+      const raw = sessionStorage.getItem('loginAttempts');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return { count: 0, until: 0 };
+  };
+
+  const setStoredAttempts = (count, until) => {
+    try {
+      sessionStorage.setItem('loginAttempts', JSON.stringify({ count, until }));
+    } catch {}
+  };
+
+  const clearStoredAttempts = () => {
+    try { sessionStorage.removeItem('loginAttempts'); } catch {}
+  };
+
+  const getCooldownDuration = (attempts) => {
+    if (attempts >= 5) return 60;
+    if (attempts >= 3) return 50;
+    return attempts * 5; // 1st=5s, 2nd=10s
+  };
+
+  const startCooldownTimer = (sec) => {
+    clearCooldown();
+    setLoginCooldown(sec);
+    cooldownTimer.current = setInterval(() => {
+      setLoginCooldown(prev => {
+        if (prev <= 1) {
+          clearCooldown();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const clearCooldown = () => {
+    if (cooldownTimer.current) {
+      clearInterval(cooldownTimer.current);
+      cooldownTimer.current = null;
+    }
+    setLoginCooldown(0);
+  };
+
+  useEffect(() => {
+    // Restore cooldown from sessionStorage on mount/refresh
+    const saved = getStoredAttempts();
+    if (saved.until > Date.now()) {
+      const remaining = Math.ceil((saved.until - Date.now()) / 1000);
+      startCooldownTimer(remaining);
+    } else if (saved.until > 0) {
+      clearStoredAttempts();
+    }
+    return () => clearCooldown();
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (loginCooldown > 0) return;
     setLoading(true);
     setError(null);
+
+    // Small random delay to prevent timing attacks
+    await new Promise(r => setTimeout(r, 100 + Math.random() * 200));
 
     const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (signInError) {
-      const msg = signInError.message || '';
-      if (msg.includes('Invalid login credentials')) {
-        setError('E-mail ou senha incorretos.');
-      } else if (msg.includes('Email not confirmed')) {
-        setError('E-mail não confirmado. Verifique sua caixa de entrada.');
-      } else if (msg.includes('rate_limit') || msg.includes('Too many requests')) {
-        setError('Muitas tentativas. Aguarde alguns segundos e tente novamente.');
-      } else if (msg.includes('network') || msg.includes('fetch')) {
-        setError('Erro de conexão. Verifique sua internet.');
-      } else {
-        setError('Erro ao fazer login. Tente novamente.');
-      }
+      const saved = getStoredAttempts();
+      const attemptCount = saved.count + 1;
+      const duration = getCooldownDuration(attemptCount);
+      const until = Date.now() + duration * 1000;
+      setStoredAttempts(attemptCount, until);
+      startCooldownTimer(duration);
+
+      setError('Erro ao fazer login. Verifique suas credenciais.');
       setLoading(false);
       return;
     }
 
     if (data?.session) {
+      clearStoredAttempts();
+      clearCooldown();
       const role = await getUserRole(data.session.user.id, data.session.user.email);
       if (role === ROLE_DONO) {
         navigate('/app');
@@ -137,11 +199,13 @@ const Login = () => {
             <motion.button
               type="submit"
               className="login-submit"
-              disabled={loading}
+              disabled={loading || loginCooldown > 0}
               whileTap={{ scale: 0.98 }}
             >
               {loading ? (
                 <span className="login-loading" />
+              ) : loginCooldown > 0 ? (
+                <>Aguarde {loginCooldown}s</>
               ) : (
                 <><LogIn size={18} /> Entrar</>
               )}

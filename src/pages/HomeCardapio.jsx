@@ -306,10 +306,7 @@ export default function HomeCardapio() {
           </nav>
 
           <div className="top-actions">
-            <button className="order-button" onClick={() => navigate("/order")}>
-              <Icon name="bag" />
-              Pedir
-            </button>
+
             <button className="system-button" onClick={() => navigate("/login")}>
               <Icon name="login" />
               Sistema
@@ -328,14 +325,9 @@ export default function HomeCardapio() {
             </p>
 
             <div className="hero-actions">
-              <button className="cta-primary" onClick={() => navigate("/order")}>
+              <button className="cta-primary" onClick={() => scrollTo("cardapio")}>
                 <Icon name="bag" />
-                Fazer Pedido
-                <Icon name="arrow" />
-              </button>
-              <button className="cta-secondary" onClick={() => scrollTo("cardapio")}>
-                Ver Card&aacute;pio
-                <Icon name="chevron" />
+                Ver Cardápio
               </button>
             </div>
 
@@ -387,14 +379,13 @@ export default function HomeCardapio() {
           </div>
         </nav>
 
-        {MENU_DISPLAY.slice(0, 1).map((section) => (
-          <MenuCategory
-            section={section}
-            isFirst
-            onCategoryClick={() => navigate("/order")}
-            key={section.category}
-          />
-        ))}
+          {MENU_DISPLAY.slice(0, 1).map((section) => (
+            <MenuCategory
+              section={section}
+              isFirst
+              key={section.category}
+            />
+          ))}
 
         <div className="features-row">
           {features.map((feature) => (
@@ -414,7 +405,6 @@ export default function HomeCardapio() {
           {MENU_DISPLAY.slice(1).map((section) => (
             <MenuCategory
               section={section}
-              onCategoryClick={() => navigate("/order")}
               key={section.category}
             />
           ))}

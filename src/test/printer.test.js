@@ -5,7 +5,8 @@ describe('splitOrder', () => {
   const order = {
     id: '123',
     mesa: '5',
-    cliente_nome: 'Teste',
+  
+
     itens: [
       { name: 'Picanha', category: 'Chapas', quantity: 2 },
       { name: 'Coca-Cola', category: 'Bebidas', quantity: 1 },

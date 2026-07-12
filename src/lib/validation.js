@@ -3,6 +3,15 @@ export function sanitizeString(str, maxLength = 255) {
   return str.trim().slice(0, maxLength).replace(/[<>]/g, '');
 }
 
+export function sanitizeHtml(str) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/&#x?\d+;|&#x[0-9a-f]+;|\\x[0-9a-f]{2}|\\u[0-9a-f]{4}/gi, '')
+    .replace(/[<>"']/g, (ch) => ({
+      '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[ch]));
+}
+
 export function validateEmail(email) {
   if (typeof email !== 'string') return null;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -12,7 +21,13 @@ export function validateEmail(email) {
 
 export function validateTableNumber(table) {
   const num = parseInt(table, 10);
-  return (!isNaN(num) && num >= 1 && num <= 7) ? num : null;
+  return (!isNaN(num) && num >= 1 && num <= 8) ? num : null;
+}
+
+export function validateClientName(name) {
+  if (typeof name !== 'string') return null;
+  const trimmed = name.trim().slice(0, 100);
+  return trimmed.length > 0 ? trimmed : null;
 }
 
 export function validateOrderData(data) {
@@ -24,15 +39,9 @@ export function validateOrderData(data) {
   
   if (data.tipo === 'mesa') {
     const mesaNum = parseInt(data.mesa, 10);
-    if (isNaN(mesaNum) || mesaNum < 1 || mesaNum > 7) {
-      errors.push('Número da mesa deve ser entre 1 e 7');
+    if (isNaN(mesaNum) || mesaNum < 1 || mesaNum > 8) {
+      errors.push('Número da mesa deve ser entre 1 e 8');
     }
-  }
-  
-  if (!data.cliente_nome || data.cliente_nome.trim().length === 0) {
-    errors.push('Nome do cliente é obrigatório');
-  } else if (data.cliente_nome.trim().length > 100) {
-    errors.push('Nome do cliente deve ter no máximo 100 caracteres');
   }
   
   if (!data.itens || data.itens.length === 0) {
@@ -46,19 +55,26 @@ export function validateOrderData(data) {
   if (data.observacao && data.observacao.length > 500) {
     errors.push('Observação deve ter no máximo 500 caracteres');
   }
+  if (data.observacao) {
+    data.observacao = sanitizeHtml(data.observacao);
+  }
   
   for (const item of data.itens || []) {
     if (!item.name || item.name.trim().length === 0) {
       errors.push('Item sem nome detectado');
       continue;
     }
-    if (item.variants && item.variants.length > 0) continue;
+
     if (typeof item.price !== 'number' || item.price <= 0) {
       errors.push(`Preço inválido para item: ${item.name}`);
       continue;
     }
     if (typeof item.quantity !== 'number' || item.quantity < 1 || item.quantity > 99) {
       errors.push(`Quantidade inválida para item: ${item.name}`);
+      continue;
+    }
+    if (item.serving_time && !['now', 'with_food'].includes(item.serving_time)) {
+      errors.push(`serving_time inválido para item: ${item.name}`);
       continue;
     }
   }
