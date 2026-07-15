@@ -108,17 +108,23 @@ export async function addBuffetToComanda(codigo, pesoKg, precoKg, observacao) {
 export async function closeComanda(codigo) {
   const { data: user } = await supabase.auth.getUser();
   const { error: err1 } = await supabase
-    .from('comandas')
-    .update({ status: 'fechada', closed_at: new Date().toISOString(), closed_by: user?.user?.id || null })
-    .eq('codigo', codigo)
-    .eq('status', 'aberta');
-  if (err1) throw err1;
-  const { error: err2 } = await supabase
     .from('pedidos')
     .update({ status: 'pago' })
     .eq('comanda_codigo', codigo)
-    .neq('status', 'pago');
+    .neq('status', 'pago')
+    .neq('status', 'cancelado');
+  if (err1) throw err1;
+  const { error: err2 } = await supabase
+    .from('pedidos')
+    .update({ comanda_codigo: null })
+    .eq('comanda_codigo', codigo);
   if (err2) throw err2;
+  const { error: err3 } = await supabase
+    .from('comandas')
+    .update({ status: 'aberta', closed_at: null, closed_by: null })
+    .eq('codigo', codigo)
+    .eq('status', 'aberta');
+  if (err3) throw err3;
 }
 
 export async function cancelComanda(codigo) {

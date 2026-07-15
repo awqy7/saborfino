@@ -69,7 +69,7 @@ const Caixa = () => {
     setLoading(true);
     try {
       await closeComanda(comandaResult.comanda.codigo);
-      setSuccessMsg('Comanda ' + comandaResult.comanda.codigo + ' fechada com sucesso!');
+      setSuccessMsg('Comanda ' + comandaResult.comanda.codigo + ' paga e liberada!');
       if (successTimer.current) clearTimeout(successTimer.current);
       successTimer.current = setTimeout(() => setSuccessMsg(''), 4000);
       setComandaResult(null);

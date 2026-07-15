@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Codes - Comandas</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Courier New', monospace;
+    background: #111211;
+    color: #f4f0e9;
+    padding: 2rem;
+  }
+  .page {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+    color: #ff8507;
+  }
+  .sub {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #beb9b2;
+    margin-bottom: 2rem;
+    letter-spacing: 2px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  .card {
+    background: #1a1a1a;
+    border: 1px solid rgba(255,133,7,0.25);
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+    break-inside: avoid;
+  }
+  .card img {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    display: block;
+    margin: 0 auto 0.75rem;
+    image-rendering: pixelated;
+  }
+  .card .code {
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: #ff8507;
+    letter-spacing: 2px;
+  }
+  .card .url {
+    font-size: 0.6rem;
+    color: #5e5a56;
+    margin-top: 0.25rem;
+    word-break: break-all;
+  }
+  @media print {
+    body { background: white; padding: 0.5in; color: black; }
+    .card { background: white; border: 2px solid #ccc; }
+    .card .code { color: #000; }
+    h1 { color: #000; }
+    .sub { color: #666; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>FINO SABOR</h1>
+  <p class="sub">CHURRASCARIA · QR CODES</p>
+  <div class="grid">
+    <div class="card">
+      <img src="qrcodes/C001.png" alt="C001">
+      <div class="code">C001</div>
+      <div class="url">finosabor.netlify.app/comanda/C001</div>
+    </div>
+    <div class="card">
+      <img src="qrcodes/C002.png" alt="C002">
+      <div class="code">C002</div>
+      <div class="url">finosabor.netlify.app/comanda/C002</div>
+    </div>
+    <div class="card">
+      <img src="qrcodes/C003.png" alt="C003">
+      <div class="code">C003</div>
+      <div class="url">finosabor.netlify.app/comanda/C003</div>
+    </div>
+    <div class="card">
+      <img src="qrcodes/C004.png" alt="C004">
+      <div class="code">C004</div>
+      <div class="url">finosabor.netlify.app/comanda/C004</div>
+    </div>
+    <div class="card">
+      <img src="qrcodes/C005.png" alt="C005">
+      <div class="code">C005</div>
+      <div class="url">finosabor.netlify.app/comanda/C005</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -51,7 +51,7 @@ const ComandaView = () => {
   };
 
   const comanda = comandaData?.comanda;
-  const pedidos = comandaData?.pedidos || [];
+  const pedidos = (comandaData?.pedidos || []).filter(p => p.status === 'pendente');
   const allItens = pedidos.flatMap(p => p.itens || []);
   const total = pedidos.reduce((acc, p) => acc + (Number(p.total) || 0), 0);
   const pesoTotal = allItens.filter(i => i.peso).reduce((acc, i) => acc + (i.peso || 0), 0);
