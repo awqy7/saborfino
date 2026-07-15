@@ -165,31 +165,9 @@ const POS = () => {
 
   const cartTotal = cart.reduce((acc, i) => acc + i.price * i.quantity, 0);
   const cartCount = cart.reduce((acc, i) => acc + i.quantity, 0);
-  const hasDrinks = cart.some(i => MULTI_ITEM_CATEGORIES.includes(i.category));
-
   const handleFinishOrderClick = () => {
     if (cart.length === 0) return;
-    if (hasDrinks) {
-      setView('drinkTiming');
-    } else {
-      submitOrder();
-    }
-  };
-
-  const setAllDrinkTiming = (timing) => {
-    setCart(prev => prev.map(i => {
-      if (MULTI_ITEM_CATEGORIES.includes(i.category)) {
-        return { ...i, serving_time: timing };
-      }
-      return i;
-    }));
-  };
-
-  const toggleDrinkTiming = (cartKey) => {
-    setCart(prev => prev.map(i => {
-      if (i.cartKey !== cartKey) return i;
-      return { ...i, serving_time: i.serving_time === 'now' ? 'with_food' : 'now' };
-    }));
+    submitOrder();
   };
 
   const submitOrder = async () => {
@@ -509,127 +487,20 @@ const POS = () => {
             className="btn btn-primary"
             style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}
           >
-            {isSubmitting ? 'Enviando...' : <><ChevronRight size={18} /> Finalizar</>}
+            {isSubmitting ? 'Enviando...' : <><ChevronRight size={18} /> Adicionar</>}
           </button>
         </div>
       </>
     );
   };
 
-  /* ---------- VIEW: Drink Timing ---------- */
-  const renderDrinkTiming = () => {
-    const drinkItems = cart.filter(i => MULTI_ITEM_CATEGORIES.includes(i.category));
-    const nonDrinkItems = cart.filter(i => !MULTI_ITEM_CATEGORIES.includes(i.category));
-    const allNow = drinkItems.every(i => i.serving_time === 'now');
-    const allWithFood = drinkItems.every(i => i.serving_time === 'with_food');
-
-    return (
-      <div className="pos" style={{ paddingBottom: '6rem' }}>
-        <div className="pos-topbar" style={{ justifyContent: 'flex-start', gap: '0.6rem', padding: '0 1rem' }}>
-          <button onClick={() => setView('items')} className="btn btn-ghost btn-sm" style={{
-            display: 'flex', alignItems: 'center', gap: '0.3rem',
-            padding: '0.4rem 0.6rem', borderRadius: 'var(--radius-sm)',
-            fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-secondary)',
-          }}>
-            <ArrowLeft size={16} /> Voltar
-          </button>
-          <span style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--primary)' }}>
-            {comanda?.codigo}
-          </span>
-        </div>
-
-        <div style={{ padding: '1.25rem 1rem' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.25rem' }}>
-            Quando servir as bebidas?
-          </h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
-            Toque para alternar entre Agora / Com a Comida
-          </p>
-
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
-            <button onClick={() => setAllDrinkTiming('now')} style={{
-              flex: 1, padding: '0.5rem', borderRadius: 'var(--radius-sm)',
-              border: '2px solid ' + (allNow ? 'var(--primary)' : 'var(--border)'),
-              background: allNow ? 'var(--primary-light)' : 'transparent',
-              cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem',
-              color: allNow ? 'var(--primary)' : 'var(--text-secondary)', fontFamily: 'inherit',
-            }}>
-              Todas Agora
-            </button>
-            <button onClick={() => setAllDrinkTiming('with_food')} style={{
-              flex: 1, padding: '0.5rem', borderRadius: 'var(--radius-sm)',
-              border: '2px solid ' + (allWithFood ? 'var(--primary)' : 'var(--border)'),
-              background: allWithFood ? 'var(--primary-light)' : 'transparent',
-              cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem',
-              color: allWithFood ? 'var(--primary)' : 'var(--text-secondary)', fontFamily: 'inherit',
-            }}>
-              Todas c/ Comida
-            </button>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {drinkItems.map(item => (
-              <button key={item.cartKey} onClick={() => toggleDrinkTiming(item.cartKey)} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '1rem 1.25rem', borderRadius: 'var(--radius-md)',
-                border: '2px solid ' + (item.serving_time === 'now' ? '#3b82f6' : '#f59e0b'),
-                background: item.serving_time === 'now' ? '#eff6ff' : '#fffbeb',
-                cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', width: '100%',
-              }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-                    {item.quantity}x {item.name}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                    {formatPrice(item.price * item.quantity)}
-                  </div>
-                </div>
-                <div style={{
-                  padding: '0.3rem 0.75rem', borderRadius: '99px', fontWeight: 800, fontSize: '0.8rem',
-                  background: item.serving_time === 'now' ? '#3b82f6' : '#f59e0b', color: 'white',
-                }}>
-                  {item.serving_time === 'now' ? 'Agora' : 'Com Comida'}
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {/* Non-drink items summary */}
-          {nonDrinkItems.length > 0 && (
-            <div style={{ marginTop: '1.25rem', padding: '0.75rem', background: 'var(--surface-subtle)', borderRadius: 'var(--radius-md)' }}>
-              <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                Itens de comida ({nonDrinkItems.reduce((s, i) => s + i.quantity, 0)})
-              </div>
-              {nonDrinkItems.map(item => (
-                <div key={item.cartKey} style={{ fontSize: '0.8rem', color: 'var(--text-muted)', padding: '0.15rem 0' }}>
-                  {item.quantity}x {item.name}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0,
-          padding: '1rem 1.25rem', background: 'var(--surface)',
-          borderTop: '2px solid var(--border)',
-          boxShadow: '0 -4px 20px rgba(0,0,0,0.08)', zIndex: 20,
-        }}>
-          <button onClick={submitOrder} disabled={isSubmitting} className="btn btn-primary"
-            style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', padding: '1rem' }}>
-            {isSubmitting ? 'Imprimindo...' : <><ChevronRight size={20} /> Confirmar e Imprimir</>}
-          </button>
-        </div>
-      </div>
-    );
-  };
+  /* ---------- END OF MAIN LOGIC ---------- */
 
   return (
     <>
       {view === 'comandaInput' && renderComandaInput()}
       {view === 'categories' && renderCategories()}
       {view === 'items' && renderItems()}
-      {view === 'drinkTiming' && renderDrinkTiming()}
 
       {showScanner && <QrScanner onScan={handleQRScan} onClose={() => setShowScanner(false)} />}
     </>

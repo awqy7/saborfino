@@ -35,7 +35,15 @@ export async function createComanda(codigo, precoKg = 48.90) {
     if (error.code === '23505') {
       const existing = await getComanda(codigo);
       if (existing && existing.status === 'aberta') return existing;
-      throw new Error('Comanda ' + codigo + ' já está fechada');
+      await supabase
+        .from('pedidos')
+        .update({ comanda_codigo: null })
+        .eq('comanda_codigo', codigo);
+      await supabase
+        .from('comandas')
+        .update({ status: 'aberta', preco_kg: precoKg, closed_at: null, closed_by: null })
+        .eq('codigo', codigo);
+      return { ...existing, status: 'aberta', preco_kg: precoKg, closed_at: null, closed_by: null };
     }
     throw error;
   }
