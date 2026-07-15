@@ -22,7 +22,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<HomeCardapio />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/comanda/:tableId" element={<ComandaView />} />
+              <Route path="/comanda/:codigo" element={<ComandaView />} />
               <Route path="/app/*" element={<ProtectedLayout />} />
             </Routes>
           </Suspense>

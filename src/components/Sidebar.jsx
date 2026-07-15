@@ -2,7 +2,8 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
-  ShoppingCart, 
+  ShoppingCart,
+  Scale,
   Receipt,
   BarChart3, 
   Settings, 
@@ -34,6 +35,7 @@ const Sidebar = ({ role, sidebarOpen, onClose }) => {
   const allNavItems = [
     { name: 'Dashboard', path: '/app', icon: LayoutDashboard, label: 'Visão Geral', roles: [ROLE_DONO] },
     { name: 'Pedidos', path: '/app/pos', icon: ShoppingCart, label: 'Ponto de Venda', roles: [ROLE_DONO, ROLE_ATENDENTE] },
+    { name: 'Balança', path: '/app/balanca', icon: Scale, label: 'Self-service por Quilo', roles: [ROLE_DONO] },
     { name: 'Cozinha', path: '/app/cozinha', icon: UtensilsCrossed, label: 'Painel da Cozinha', roles: [ROLE_DONO, ROLE_ATENDENTE] },
     { name: 'Caixa', path: '/app/caixa', icon: Receipt, label: 'Controle Financeiro', roles: [ROLE_DONO] },
     { name: 'Relatórios', path: '/app/relatorios', icon: BarChart3, label: 'Análises', roles: [ROLE_DONO] },

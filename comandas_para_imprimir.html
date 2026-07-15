@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comandas Sabor Fino</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Courier New', monospace;
+    background: #f5f5f5;
+    padding: 2rem;
+  }
+  @media print {
+    body { background: white; padding: 0; }
+    .no-print { display: none !important; }
+    .card { page-break-inside: avoid; }
+    .page { page-break-after: always; }
+  }
+  .no-print {
+    text-align: center; padding: 1rem; margin-bottom: 2rem;
+    background: #1a1a2e; color: white; border-radius: 12px;
+  }
+  .no-print button {
+    padding: 0.75rem 2rem; border: none; border-radius: 8px;
+    background: #f59e0b; color: #1a1a2e; font-weight: 800;
+    font-size: 1.1rem; cursor: pointer; font-family: inherit;
+    margin-top: 0.5rem;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    border: 2px dashed #ccc;
+    position: relative;
+  }
+  .card .codigo {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #1a1a2e;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.75rem;
+  }
+  .card .qr-wrap {
+    display: flex; justify-content: center; margin-bottom: 0.75rem;
+  }
+  .card .qr-wrap canvas, .card .qr-wrap img {
+    border-radius: 8px;
+  }
+  .card .url {
+    font-size: 0.65rem;
+    color: #999;
+    word-break: break-all;
+    margin-bottom: 0.5rem;
+  }
+  .card .rodape {
+    font-size: 0.7rem;
+    color: #aaa;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .card .furos {
+    position: absolute;
+    top: 8px; left: 8px; right: 8px;
+    display: flex; justify-content: space-between;
+    pointer-events: none;
+  }
+  .card .furos span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #ddd;
+  }
+  .instrucao {
+    max-width: 600px; margin: 2rem auto 1rem;
+    background: #fffbeb; border: 1px solid #fde68a;
+    border-radius: 12px; padding: 1rem 1.25rem;
+    font-size: 0.85rem; color: #92400e; line-height: 1.5;
+  }
+  .instrucao strong { color: #78350f; }
+</style>
+</head>
+<body>
+
+<div class="no-print">
+  <h1>Comandas Sabor Fino</h1>
+  <p style="margin: 0.5rem 0; opacity: 0.8;">Recorte e cole nos cartões de entrada</p>
+  <button onclick="window.print()">Imprimir</button>
+</div>
+
+<div class="instrucao">
+  <strong>Instruções:</strong><br>
+  1. Imprima esta página em papel sulfite ou cartão<br>
+  2. Recorte cada quadrado<br>
+  3. Dobre ao meio ou cole em um cartão mais firme<br>
+  4. Entregue ao cliente na entrada<br>
+  5. O staff escaneia o QR code de dentro do app (Balanca/POS/Caixa)<br>
+  6. O cliente escaneia com o celular e vê os itens
+</div>
+
+<div class="grid" id="grid"></div>
+
+<script>
+  const BASE = 'https://saborfino.app';
+  const codes = ['C001', 'C002', 'C003', 'C004', 'C005'];
+
+  const grid = document.getElementById('grid');
+
+  codes.forEach(code => {
+    const url = BASE + '/comanda/' + code;
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    card.innerHTML = `
+      <div class="furos"><span></span><span></span></div>
+      <div class="codigo">${code}</div>
+      <div class="qr-wrap"><div id="qr-${code}"></div></div>
+      <div class="url">${url}</div>
+      <div class="rodape">Fino Sabor · Churrascaria</div>
+    `;
+
+    grid.appendChild(card);
+  });
+
+  // Generate QR codes after DOM
+  setTimeout(() => {
+    codes.forEach(code => {
+      const url = BASE + '/comanda/' + code;
+      new QRCode(document.getElementById('qr-' + code), {
+        text: url,
+        width: 180,
+        height: 180,
+        colorDark: '#1a1a2e',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    });
+  }, 100);
+</script>
+
+</body>
+</html>

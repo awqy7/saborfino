@@ -51,14 +51,14 @@ export function onStatusChange(station, cb) {
 
 export async function connect(station) {
   const s = stations[station];
-  if (!s) throw new Error(`Estação inválida: ${station}`);
+  if (!s) throw new Error('Estação inválida: ' + station);
   if (!navigator.serial) throw new Error('Web Serial API não disponível. Use Chrome ou Edge.');
-  if (s.port) throw new Error(`Impressora ${LABELS[station]?.name || station} já está conectada`);
+  if (s.port) throw new Error('Impressora ' + (LABELS[station]?.name || station) + ' já está conectada');
   try {
     const selected = await navigator.serial.requestPort();
     for (const [key, st] of Object.entries(stations)) {
       if (key !== station && st.port && st.port === selected) {
-        throw new Error(`Porta já em uso por ${LABELS[key]?.name || key}. Desconecte-a primeiro.`);
+        throw new Error('Porta já em uso por ' + (LABELS[key]?.name || key) + '. Desconecte-a primeiro.');
       }
     }
     await selected.open({ baudRate: 9600, dataBits: 8, stopBits: 1, parity: 'none' });
@@ -83,11 +83,26 @@ export async function disconnect(station) {
 
 export async function printOrder(order, station) {
   const s = stations[station];
-  if (!s) throw new Error(`Estação inválida: ${station}`);
-  if (!s.port) throw new Error(`Impressora ${LABELS[station]?.name || station} não conectada`);
+  if (!s) throw new Error('Estação inválida: ' + station);
+  if (!s.port) throw new Error('Impressora ' + (LABELS[station]?.name || station) + ' não conectada');
   return new Promise((resolve, reject) => {
     s.queue.push({ order, resolve, reject });
     processQueue(station);
+  });
+}
+
+export async function printSenha(senhaNum, pesoKg, precoKg, total, comandaCodigo) {
+  const s = stations.barcaixa;
+  if (!s.port) {
+    throw new Error('Impressora não conectada');
+  }
+  return new Promise((resolve, reject) => {
+    s.queue.push({
+      order: { senhaNum, pesoKg, precoKg, total, comandaCodigo },
+      resolve, reject,
+      isSenha: true,
+    });
+    processQueue('barcaixa');
   });
 }
 
@@ -118,7 +133,9 @@ async function processQueue(station) {
   s.printing = true;
   const job = s.queue.shift();
   try {
-    const data = buildReceipt(job.order, station);
+    const data = job.isSenha
+      ? buildSenhaReceipt(job.order)
+      : buildReceipt(job.order, station);
     const writer = s.port.writable.getWriter();
     try {
       await writer.write(data);
@@ -151,6 +168,54 @@ function txt(s) {
   return buf;
 }
 
+function buildSenhaReceipt({ senhaNum, pesoKg, precoKg, total, comandaCodigo }) {
+  const ESC = 0x1B, GS = 0x1D;
+  const C = {
+    init: [ESC, 0x40],
+    center: [ESC, 0x61, 0x01],
+    left: [ESC, 0x61, 0x00],
+    cut: [GS, 0x56, 0x00],
+  };
+
+  const buf = [];
+  const S = '-'.repeat(24);
+
+  buf.push(C.init);
+  buf.push(txt('\n'));
+  buf.push(C.center);
+  buf.push(txt('FINO SABOR\n'));
+  buf.push(txt('Churrascaria\n'));
+  buf.push(txt('\n'));
+  if (comandaCodigo) {
+    buf.push(txt('COMANDA: ' + comandaCodigo + '\n'));
+    buf.push(txt(S + '\n'));
+  } else {
+    buf.push(txt('SENHA: ' + senhaNum + '\n'));
+    buf.push(txt(S + '\n'));
+  }
+  buf.push(C.left);
+  buf.push(txt('Peso: ' + pesoKg.toFixed(3).replace('.', ',') + ' kg\n'));
+  buf.push(txt('Preco/kg: R$ ' + precoKg.toFixed(2).replace('.', ',') + '\n'));
+  buf.push(txt(S + '\n'));
+  buf.push(C.center);
+  buf.push(txt('TOTAL: R$ ' + total.toFixed(2).replace('.', ',') + '\n'));
+  buf.push(txt('\n'));
+  buf.push(txt(new Date().toLocaleString('pt-BR') + '\n'));
+  buf.push(txt('\n'));
+  buf.push(txt('Boa refeicao!\n'));
+  buf.push(txt('\n\n'));
+  buf.push(C.cut);
+
+  const totalLen = buf.reduce((a, b) => a + b.length, 0);
+  const result = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const b of buf) {
+    result.set(b, offset);
+    offset += b.length;
+  }
+  return result;
+}
+
 function buildReceipt(order, station) {
   const ESC = 0x1B, GS = 0x1D;
   const C = {
@@ -167,18 +232,23 @@ function buildReceipt(order, station) {
   buf.push(C.init);
   buf.push(txt('\n'));
   buf.push(C.center);
-  buf.push(txt(`${label}\n`));
+  buf.push(txt(label + '\n'));
   buf.push(txt('FINO SABOR\n'));
   buf.push(txt('\n'));
   buf.push(C.left);
-  buf.push(txt(`MESA ${order.mesa || 'BALCAO'}\n`));
-  buf.push(txt(`#${(order.id || '').toString().slice(0, 8)}\n`));
+
+  if (order.comanda_codigo) {
+    buf.push(txt('Comanda: ' + order.comanda_codigo + '\n'));
+  } else {
+    buf.push(txt('MESA ' + (order.mesa || 'BALCAO') + '\n'));
+  }
+  buf.push(txt('#' + (order.id || '').toString().slice(0, 8) + '\n'));
   buf.push(txt(new Date().toLocaleString('pt-BR') + '\n'));
   buf.push(txt(S + '\n'));
 
   const itens = order.itens || [];
   itens.forEach(item => {
-    const name = item.quantity != null ? `${item.quantity}x ${item.name}` : item.name;
+    const name = item.quantity != null ? item.quantity + 'x ' + item.name : item.name;
     buf.push(txt(name + '\n'));
     if (item.observacao) {
       buf.push(txt('  Obs: ' + item.observacao + '\n'));
@@ -189,7 +259,7 @@ function buildReceipt(order, station) {
     buf.push(txt(S + '\n'));
     buf.push(txt('P/ ENTREGAR:\n'));
     order.pendingFood.forEach(item => {
-      const name = item.quantity != null ? `  ${item.quantity}x ${item.name}` : `  ${item.name}`;
+      const name = item.quantity != null ? '  ' + item.quantity + 'x ' + item.name : '  ' + item.name;
       buf.push(txt(name + '\n'));
     });
   }

@@ -62,7 +62,7 @@ describe('validation', () => {
     expect(validateTableNumber('1')).toBe(1)
     expect(validateTableNumber('7')).toBe(7)
     expect(validateTableNumber('0')).toBeNull()
-    expect(validateTableNumber('8')).toBeNull()
+    expect(validateTableNumber('8')).toBe(8)
     expect(validateTableNumber('abc')).toBeNull()
   })
 

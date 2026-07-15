@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { getUserRole, ROLE_DONO, ROLE_ATENDENTE } from '../lib/roles';
+import { getUserRole, ROLE_DONO, ROLE_ATENDENTE, ROLE_CHURRASQUEIRO } from '../lib/roles';
 import Sidebar from './Sidebar';
 
 const Dashboard = lazy(() => import('../pages/Dashboard'));
@@ -11,7 +11,8 @@ const Relatorios = lazy(() => import('../pages/Relatorios'));
 const Settings = lazy(() => import('../pages/Settings'));
 const Cozinha = lazy(() => import('../pages/Cozinha'));
 const PrintMonitor = lazy(() => import('../pages/PrintMonitor'));
-import { ShoppingCart, UtensilsCrossed, LayoutDashboard, Receipt, BarChart3, Settings as SettingsIcon } from 'lucide-react';
+const Balanca = lazy(() => import('../pages/Balanca'));
+import { ShoppingCart, UtensilsCrossed, LayoutDashboard, Receipt, BarChart3, Settings as SettingsIcon, Scale } from 'lucide-react';
 
 const ProtectedLayout = () => {
   const [session, setSession] = useState(null);
@@ -48,9 +49,7 @@ const ProtectedLayout = () => {
           const userRole = await getUserRole(session.user.id, session.user.email);
           setRole(userRole);
         }
-      } catch (err) {
-        // erro silencioso em produção
-      }
+      } catch {}
       setLoading(false);
     };
 
@@ -117,7 +116,6 @@ const ProtectedLayout = () => {
     );
   }
 
-  // Atendente: fullscreen POS, no sidebar, no bottom nav
   if (role === ROLE_ATENDENTE) {
     return (
       <Suspense fallback={<div className="loading"><div className="loading-spinner" /></div>}>
@@ -129,23 +127,37 @@ const ProtectedLayout = () => {
     );
   }
 
+  if (role === ROLE_CHURRASQUEIRO) {
+    return (
+      <Suspense fallback={<div className="loading"><div className="loading-spinner" /></div>}>
+        <Routes>
+          <Route path="/balanca" element={<Balanca />} />
+          <Route path="*" element={<Navigate to="/balanca" replace />} />
+        </Routes>
+      </Suspense>
+    );
+  }
+
   const allowedRoutes = role === ROLE_ATENDENTE
     ? ['/pos', '/cozinha']
-    : ['/', '/pos', '/cozinha', '/caixa', '/relatorios', '/settings', '/print-monitor'];
+    : role === ROLE_CHURRASQUEIRO
+    ? ['/balanca']
+    : ['/', '/pos', '/balanca', '/cozinha', '/caixa', '/relatorios', '/settings', '/print-monitor'];
 
   const currentPath = location.pathname;
   const isAllowed = allowedRoutes.some(route => {
-    const appRoute = route === '/' ? '/app' : `/app${route}`;
+    const appRoute = route === '/' ? '/app' : '/app' + route;
     return currentPath === appRoute || currentPath.startsWith(appRoute + '/');
   });
 
   if (currentPath.startsWith('/app') && !isAllowed) {
-    return <Navigate to={`/app${allowedRoutes[0]}`} replace />;
+    return <Navigate to={'/app' + allowedRoutes[0]} replace />;
   }
 
   const allNavItems = [
     { name: 'Dashboard', path: '/app', icon: LayoutDashboard, roles: [ROLE_DONO] },
     { name: 'Pedidos', path: '/app/pos', icon: ShoppingCart, roles: [ROLE_DONO, ROLE_ATENDENTE] },
+    { name: 'Balança', path: '/app/balanca', icon: Scale, roles: [ROLE_DONO] },
     { name: 'Cozinha', path: '/app/cozinha', icon: UtensilsCrossed, roles: [ROLE_DONO, ROLE_ATENDENTE] },
     { name: 'Caixa', path: '/app/caixa', icon: Receipt, roles: [ROLE_DONO] },
     { name: 'Relatórios', path: '/app/relatorios', icon: BarChart3, roles: [ROLE_DONO] },
@@ -159,9 +171,8 @@ const ProtectedLayout = () => {
       {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
       <Sidebar role={role} sidebarOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Mobile Bottom Nav — hidden on POS screen */}
       {!currentPath.includes('/pos') && (
-      <nav className={`mobile-bottom-nav${navHidden ? ' mobile-bottom-nav-hidden' : ''}`}>
+      <nav className={'mobile-bottom-nav' + (navHidden ? ' mobile-bottom-nav-hidden' : '')}>
         {mobileNavItems.map(item => {
           const Icon = item.icon;
           const active = (item.path === '/app' && (currentPath === '/app' || currentPath === '/app/'))
@@ -170,7 +181,7 @@ const ProtectedLayout = () => {
           return (
             <button
               key={item.path}
-              className={`mobile-bottom-nav-item${active ? ' active' : ''}`}
+              className={'mobile-bottom-nav-item' + (active ? ' active' : '')}
               onClick={() => { navigate(item.path); setSidebarOpen(false); }}
             >
               <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
@@ -193,6 +204,7 @@ const ProtectedLayout = () => {
               </>
             )}
             <Route path="/pos" element={<POS />} />
+            <Route path="/balanca" element={<Balanca />} />
             <Route path="/cozinha" element={<Cozinha />} />
             <Route path="/print-monitor" element={<PrintMonitor />} />
             <Route path="*" element={<Navigate to="/app" replace />} />
