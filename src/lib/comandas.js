@@ -157,7 +157,7 @@ export async function searchComandas(searchTerm) {
   return data ? [data] : [];
 }
 
-export async function getRecentComandas(limit = 10) {
+export async function getRecentComandas(limit = 50) {
   const { data, error } = await supabase
     .from('comandas')
     .select('codigo, status, created_at, closed_at')
@@ -166,6 +166,29 @@ export async function getRecentComandas(limit = 10) {
     .limit(limit);
   if (error) throw error;
   return data || [];
+}
+
+export async function getOpenComandasResumo() {
+  const comandas = await getRecentComandas(50);
+  const codigos = comandas.map(c => c.codigo);
+  if (codigos.length === 0) return [];
+  const { data: pedidos, error } = await supabase
+    .from('pedidos')
+    .select('comanda_codigo, total, status')
+    .in('comanda_codigo', codigos)
+    .eq('status', 'pendente');
+  if (error) throw error;
+  const grouped = {};
+  for (const p of pedidos || []) {
+    if (!grouped[p.comanda_codigo]) grouped[p.comanda_codigo] = { count: 0, total: 0 };
+    grouped[p.comanda_codigo].count++;
+    grouped[p.comanda_codigo].total += Number(p.total) || 0;
+  }
+  return comandas.map(c => ({
+    ...c,
+    pedidos_count: grouped[c.codigo]?.count || 0,
+    total: grouped[c.codigo]?.total || 0,
+  }));
 }
 
 export async function getComandaPedidos(codigo) {

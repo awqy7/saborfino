@@ -6,7 +6,7 @@ import {
   X, Search, Camera, ChevronRight, RotateCcw,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { parseComandaCode, getComandaData, closeComanda, cancelComanda } from '../lib/comandas';
+import { parseComandaCode, getComandaData, closeComanda, cancelComanda, getOpenComandasResumo } from '../lib/comandas';
 import QrScanner from '../components/QrScanner';
 
 const Caixa = () => {
@@ -17,12 +17,30 @@ const Caixa = () => {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [showConfirmClose, setShowConfirmClose] = useState(false);
+  const [openComandas, setOpenComandas] = useState([]);
+  const [loadingOpen, setLoadingOpen] = useState(true);
   const searchInputRef = useRef(null);
   const successTimer = useRef(null);
+  const openTimer = useRef(null);
+
+  const loadOpenComandas = async () => {
+    try {
+      const list = await getOpenComandasResumo();
+      setOpenComandas(list);
+    } catch {}
+    setLoadingOpen(false);
+  };
 
   useEffect(() => {
-    if (searchInputRef.current) searchInputRef.current.focus();
+    loadOpenComandas();
+    openTimer.current = setInterval(loadOpenComandas, 15000);
+    return () => clearInterval(openTimer.current);
   }, []);
+
+  const selectOpenComanda = (codigo) => {
+    setSearchTerm(codigo);
+    searchComanda(codigo);
+  };
 
   const handleQRScan = async (rawValue) => {
     const code = parseComandaCode(rawValue);
@@ -75,6 +93,7 @@ const Caixa = () => {
       setComandaResult(null);
       setSearchTerm('');
       setShowConfirmClose(false);
+      loadOpenComandas();
     } catch (err) {
       setError('Erro ao fechar: ' + (err.message || ''));
     }
@@ -92,6 +111,7 @@ const Caixa = () => {
       successTimer.current = setTimeout(() => setSuccessMsg(''), 4000);
       setComandaResult(null);
       setSearchTerm('');
+      loadOpenComandas();
     } catch (err) {
       setError('Erro ao cancelar: ' + (err.message || ''));
     }
@@ -181,6 +201,50 @@ const Caixa = () => {
           </div>
         )}
       </div>
+
+      {/* Open Comandas List */}
+      {!comanda && !loadingOpen && openComandas.length > 0 && (
+        <div style={{ marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Clock size={16} /> Comandas em Aberto ({openComandas.length})
+          </h3>
+          <div style={{ display: 'grid', gap: '0.5rem', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
+            {openComandas.map(c => (
+              <button
+                key={c.codigo}
+                onClick={() => selectOpenComanda(c.codigo)}
+                className="card"
+                style={{
+                  padding: '0.75rem 1rem', cursor: 'pointer', textAlign: 'left',
+                  border: '2px solid var(--border)', transition: 'border-color 0.2s',
+                  background: 'var(--surface)',
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+              >
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)', fontFamily: "'Sora', sans-serif" }}>
+                  {c.codigo}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                  {formatDate(c.created_at)} {formatTime(c.created_at)}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.35rem', fontSize: '0.8rem' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>{c.pedidos_count} pedido{c.pedidos_count !== 1 ? 's' : ''}</span>
+                  {c.total > 0 && (
+                    <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{formatPrice(c.total)}</span>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!comanda && !loadingOpen && openComandas.length === 0 && !loading && (
+        <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          Nenhuma comanda em aberto
+        </div>
+      )}
 
       {/* Comanda Result */}
       {loading && (
@@ -315,7 +379,7 @@ const Caixa = () => {
         </motion.div>
       )}
 
-      {!comanda && !loading && !error && (
+      {!comanda && !loading && !error && !loadingOpen && openComandas.length === 0 && (
         <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
           <Search size={48} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
           <p style={{ fontWeight: 600 }}>Digite o código da comanda ou escaneie o QR Code</p>
