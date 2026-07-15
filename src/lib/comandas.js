@@ -68,6 +68,9 @@ export async function nextComandaCodigo() {
 export async function getComandaData(codigo) {
   const { data, error } = await supabase.rpc('get_comanda_data', { p_codigo: codigo });
   if (error) throw error;
+  if (data?.pedidos) {
+    data.pedidos = data.pedidos.filter(p => p.status === 'pendente');
+  }
   return data;
 }
 
@@ -164,6 +167,7 @@ export async function getComandaPedidos(codigo) {
     .from('pedidos')
     .select('*')
     .eq('comanda_codigo', codigo)
+    .eq('status', 'pendente')
     .order('created_at', { ascending: true });
   if (error) throw error;
   return data || [];

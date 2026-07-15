@@ -69,16 +69,7 @@ const Balanca = () => {
     setError('');
     setLoading(true);
     try {
-      let c = await getComanda(codigo);
-      if (!c) {
-        c = await createComanda(codigo, precoKg);
-      }
-      if (c.status !== 'aberta') {
-        setError('Comanda ' + codigo + ' já foi ' + c.status);
-        setComanda(null);
-        setLoading(false);
-        return;
-      }
+      const c = await createComanda(codigo, precoKg);
       setComanda(c);
     } catch (err) {
       setError(err?.message || 'Erro ao buscar comanda');

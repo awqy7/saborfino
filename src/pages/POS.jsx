@@ -82,6 +82,7 @@ const POS = () => {
         .from('pedidos')
         .select('*')
         .eq('comanda_codigo', codigo)
+        .eq('status', 'pendente')
         .order('created_at', { ascending: true });
       if (data) {
         setComandaPedidos(data);
@@ -106,14 +107,7 @@ const POS = () => {
     if (!codigo) return;
     setError('');
     try {
-      let c = await getComanda(codigo);
-      if (!c) {
-        c = await createComanda(codigo);
-      }
-      if (c.status !== 'aberta') {
-        setError('Comanda ' + codigo + ' já foi ' + c.status);
-        return;
-      }
+      const c = await createComanda(codigo);
       setComanda(c);
       await loadComandaPedidos(codigo);
       setView('categories');
