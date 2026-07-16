@@ -36,10 +36,6 @@ export async function createComanda(codigo, precoKg = 48.90) {
       const existing = await getComanda(codigo);
       if (existing && existing.status === 'aberta') return existing;
       await supabase
-        .from('pedidos')
-        .update({ comanda_codigo: null })
-        .eq('comanda_codigo', codigo);
-      await supabase
         .from('comandas')
         .update({ status: 'aberta', preco_kg: precoKg, closed_at: null, closed_by: null })
         .eq('codigo', codigo);
@@ -115,16 +111,11 @@ export async function closeComanda(codigo) {
     .neq('status', 'cancelado');
   if (err1) throw err1;
   const { error: err2 } = await supabase
-    .from('pedidos')
-    .update({ comanda_codigo: null })
-    .eq('comanda_codigo', codigo);
-  if (err2) throw err2;
-  const { error: err3 } = await supabase
     .from('comandas')
     .update({ status: 'aberta', closed_at: null, closed_by: null })
     .eq('codigo', codigo)
     .eq('status', 'aberta');
-  if (err3) throw err3;
+  if (err2) throw err2;
 }
 
 export async function cancelComanda(codigo) {
