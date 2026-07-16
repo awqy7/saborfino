@@ -175,10 +175,10 @@ export async function getOpenComandasResumo() {
     grouped[p.comanda_codigo].count++;
     grouped[p.comanda_codigo].total += Number(p.total) || 0;
   }
-  return comandas.map(c => ({
+  return comandas.filter(c => grouped[c.codigo]).map(c => ({
     ...c,
-    pedidos_count: grouped[c.codigo]?.count || 0,
-    total: grouped[c.codigo]?.total || 0,
+    pedidos_count: grouped[c.codigo].count,
+    total: grouped[c.codigo].total,
   }));
 }
 
