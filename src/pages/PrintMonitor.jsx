@@ -4,8 +4,8 @@ import { connect, disconnect, splitAndPrint, getStatus, onStatusChange } from '.
 import { Bluetooth, BluetoothConnected, Printer, AlertCircle, Clock } from 'lucide-react';
 
 const STATIONS = [
-  { id: 'kitchen', label: 'Cozinha', icon: 'K', color: '#22c55e' },
-  { id: 'bar', label: 'Bar', icon: 'B', color: '#ff8507' },
+  { id: 'cozinha', label: 'Cozinha', icon: 'K', color: '#22c55e' },
+  { id: 'barcaixa', label: 'Caixa', icon: 'C', color: '#ff8507' },
 ];
 
 function StationCard({ station, onLog }) {

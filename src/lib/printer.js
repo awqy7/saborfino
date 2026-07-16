@@ -107,6 +107,8 @@ export async function printSenha(senhaNum, pesoKg, precoKg, total, comandaCodigo
 }
 
 export async function splitAndPrint(order) {
+  if (order.tipo === 'buffet') return;
+
   const { cozinha, barcaixa, pendingFood } = splitOrder(order);
 
   const promises = [];
@@ -127,15 +129,75 @@ export async function splitAndPrint(order) {
   await Promise.allSettled(promises);
 }
 
+export async function printComandaReceipt(comanda, pedidos) {
+  const s = stations.barcaixa;
+  if (!s || !s.port) return;
+  const allItens = pedidos.flatMap(p => p.itens || []);
+  const total = pedidos.reduce((acc, p) => acc + (Number(p.total) || 0), 0);
+  const ESC = 0x1B, GS = 0x1D;
+  const C = {
+    init: [ESC, 0x40],
+    center: [ESC, 0x61, 0x01],
+    left: [ESC, 0x61, 0x00],
+    cut: [GS, 0x56, 0x00],
+  };
+  const buf = [];
+  const S = '-'.repeat(32);
+
+  buf.push(C.init);
+  buf.push(txt('\n'));
+  buf.push(C.center);
+  buf.push(txt('FINO SABOR\n'));
+  buf.push(txt('Churrascaria & Restaurante\n'));
+  buf.push(txt('\n'));
+  buf.push(txt('COMANDA PAGA\n'));
+  buf.push(txt('\n'));
+  buf.push(C.left);
+  buf.push(txt('Comanda: ' + comanda.codigo + '\n'));
+  buf.push(txt(new Date().toLocaleString('pt-BR') + '\n'));
+  buf.push(txt(S + '\n'));
+
+  allItens.forEach((item, idx) => {
+    const qty = item.quantity || 1;
+    const price = (item.price || 0) * qty;
+    const line = qty + 'x ' + item.name;
+    buf.push(txt(line + '\n'));
+    buf.push(txt('  ' + 'R$ ' + price.toFixed(2).replace('.', ',') + '\n'));
+  });
+
+  buf.push(txt(S + '\n'));
+  buf.push(C.center);
+  buf.push(txt('TOTAL: R$ ' + total.toFixed(2).replace('.', ',') + '\n'));
+  buf.push(txt('\n'));
+  buf.push(txt('Obrigado pela preferencia!\n'));
+  buf.push(txt('\n\n'));
+  buf.push(C.cut);
+
+  const totalLen = buf.reduce((a, b) => a + b.length, 0);
+  const result = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const b of buf) {
+    result.set(b, offset);
+    offset += b.length;
+  }
+
+  return new Promise((resolve, reject) => {
+    s.queue.push({ order: { raw: result }, resolve, reject, isRaw: true });
+    processQueue('barcaixa');
+  });
+}
+
 async function processQueue(station) {
   const s = stations[station];
   if (s.printing || s.queue.length === 0) return;
   s.printing = true;
   const job = s.queue.shift();
   try {
-    const data = job.isSenha
-      ? buildSenhaReceipt(job.order)
-      : buildReceipt(job.order, station);
+    const data = job.isRaw
+      ? job.order.raw
+      : job.isSenha
+        ? buildSenhaReceipt(job.order)
+        : buildReceipt(job.order, station);
     const writer = s.port.writable.getWriter();
     try {
       await writer.write(data);

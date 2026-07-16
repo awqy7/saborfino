@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { parseComandaCode, getComandaData, closeComanda, cancelComanda, getOpenComandasResumo } from '../lib/comandas';
+import { printComandaReceipt } from '../lib/printer';
 import QrScanner from '../components/QrScanner';
 
 const Caixa = () => {
@@ -84,16 +85,19 @@ const Caixa = () => {
 
   const handleCloseComanda = async () => {
     if (!comandaResult) return;
+    const savedComanda = comandaResult.comanda;
+    const savedPedidos = comandaResult.pedidos;
     setLoading(true);
     try {
-      await closeComanda(comandaResult.comanda.codigo);
-      setSuccessMsg('Comanda ' + comandaResult.comanda.codigo + ' paga e liberada!');
+      await closeComanda(savedComanda.codigo);
+      setSuccessMsg('Comanda ' + savedComanda.codigo + ' paga e liberada!');
       if (successTimer.current) clearTimeout(successTimer.current);
       successTimer.current = setTimeout(() => setSuccessMsg(''), 4000);
       setComandaResult(null);
       setSearchTerm('');
       setShowConfirmClose(false);
       loadOpenComandas();
+      printComandaReceipt(savedComanda, savedPedidos).catch(() => {});
     } catch (err) {
       setError('Erro ao fechar: ' + (err.message || ''));
     }
